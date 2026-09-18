@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>三角が生き残る</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --panel-border:#30363d;
+    --wall:#8b949e;
+    --accent:#58a6ff;
+    --accent-dark:#1f6feb;
+    --text:#e6edf3;
+    --text-dim:#8b949e;
+    --gold:#e3b341;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--bg); color:var(--text);
+    font-family:"Zen Maru Gothic","Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    overflow:hidden; overscroll-behavior:none; touch-action:none;
+  }
+  #game{ display:block; width:100vw; height:100vh; touch-action:none; }
+
+  #hud{
+    position:fixed; top:max(14px, env(safe-area-inset-top)); left:0; right:0;
+    display:flex; justify-content:center; pointer-events:none; z-index:5;
+  }
+  #timerBox{
+    background:rgba(22,27,34,0.75); border:1px solid var(--panel-border);
+    border-radius:14px; padding:8px 22px; backdrop-filter:blur(6px);
+    font-family:"Orbitron",sans-serif;
+    font-variant-numeric:tabular-nums; font-size:28px; font-weight:800;
+    letter-spacing:1px; color:var(--accent);
+  }
+
+  .overlay{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(13,17,23,0.72); backdrop-filter:blur(4px); z-index:10;
+    padding:20px;
+  }
+  .hidden{ display:none !important; }
+
+  .card{
+    background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:20px; padding:28px 26px; width:100%; max-width:360px;
+    text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.5);
+  }
+  .card h1{ font-size:26px; margin:0 0 6px; letter-spacing:0.5px; font-weight:900; }
+  .card .sub{ color:var(--text-dim); font-size:14px; margin-bottom:22px; line-height:1.6; }
+  .triangle-icon{
+    width:0; height:0; margin:0 auto 14px;
+    border-left:20px solid transparent; border-right:20px solid transparent;
+    border-bottom:34px solid var(--accent);
+    filter:drop-shadow(0 4px 10px rgba(88,166,255,0.5));
+  }
+
+  .btn{
+    display:block; width:100%; padding:14px 18px; margin-top:12px;
+    border:none; border-radius:12px; font-size:16px; font-weight:700;
+    cursor:pointer; transition:transform .12s ease, opacity .12s ease;
+    -webkit-user-select:none; user-select:none;
+  }
+  .btn:active{ transform:scale(0.96); }
+  .btn-primary{ background:linear-gradient(135deg,var(--accent),var(--accent-dark)); color:white; }
+  .btn-secondary{ background:#21262d; color:var(--text); border:1px solid var(--panel-border); }
+  .btn:disabled{ opacity:0.5; cursor:default; }
+  .link-btn{
+    background:none; border:none; color:var(--text-dim); font-size:12px;
+    margin-top:14px; cursor:pointer; text-decoration:underline;
+  }
+
+  .result-time{
+    font-family:"Orbitron",sans-serif;
+    font-size:44px; font-weight:800; color:var(--gold);
+    font-variant-numeric:tabular-nums; margin:6px 0 10px;
+  }
+  .best-note{ font-size:13px; color:var(--text-dim); margin-bottom:16px; min-height:18px; }
+
+  .player-name{
+    font-size:14px; color:var(--text-dim); margin-bottom:6px;
+  }
+  .player-name b{ color:var(--text); }
+
+  #nameInput, #nameInput2{
+    width:100%; padding:12px 14px; border-radius:10px; margin-bottom:10px;
+    border:1px solid var(--panel-border); background:#0d1117; color:var(--text);
+    font-size:15px; text-align:center;
+  }
+  #nameInput:focus, #nameInput2:focus{ outline:none; border-color:var(--accent); }
+
+  .rank-list{
+    list-style:none; margin:0; padding:0; max-height:44vh; overflow-y:auto;
+    text-align:left; border-top:1px solid var(--panel-border);
+  }
+  .rank-list li{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 4px; border-bottom:1px solid var(--panel-border);
+    font-size:15px;
+  }
+  .rank-list .pos{ width:26px; color:var(--text-dim); font-weight:700; flex-shrink:0; }
+  .rank-list .nm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank-list .tm{ color:var(--accent); font-variant-numeric:tabular-nums; font-weight:700; flex-shrink:0; }
+  .rank-empty{ color:var(--text-dim); font-size:14px; padding:18px 0; }
+  .note{ color:var(--text-dim); font-size:12px; margin-top:14px; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden"><div id="timerBox">0.00</div></div>
+
+<div id="nameScreen" class="overlay hidden">
+  <div class="card">
+    <div class="triangle-icon"></div>
+    <h1>ニックネーム設定</h1>
+    <div class="sub">ランキングに記録するには、まずニックネームを設定してください。</div>
+    <input id="nameInput2" type="text" maxlength="10" placeholder="ニックネーム（10文字まで）">
+    <button class="btn btn-primary" id="confirmNameBtn">決定してゲームへ</button>
+  </div>
+</div>
+
+<div id="startScreen" class="overlay hidden">
+  <div class="card">
+    <div class="triangle-icon"></div>
+    <h1>三角が生き残る</h1>
+    <div class="player-name">プレイヤー: <b id="curName">-</b></div>
+    <div class="sub">ジョイスティックで三角を操作して、四方の壁から飛んでくる弾を避けよう。時間が経つほど弾は速く、数も増える。<br>ランキングは一人一記録（自己ベスト）まで。</div>
+    <button class="btn btn-primary" id="startBtn">スタート</button>
+    <button class="btn btn-secondary" id="showRankFromStart">ランキングを見る</button>
+    <button class="link-btn" id="changeNameBtn">ニックネームを変更する</button>
+    <div class="note" id="dbNote"></div>
+  </div>
+</div>
+
+<div id="gameOverScreen" class="overlay hidden">
+  <div class="card">
+    <h1>ゲームオーバー</h1>
+    <div class="sub">生存時間</div>
+    <div class="result-time" id="finalTime">0.00秒</div>
+    <div class="best-note" id="bestNote"></div>
+    <button class="btn btn-primary" id="saveScoreBtn">記録を登録する</button>
+    <button class="btn btn-secondary" id="retryBtn">もう一度プレイ</button>
+    <button class="btn btn-secondary" id="showRankFromOver">ランキングを見る</button>
+  </div>
+</div>
+
+<div id="rankingScreen" class="overlay hidden">
+  <div class="card">
+    <h1>ランキング</h1>
+    <ul class="rank-list" id="rankList"><div class="rank-empty">読み込み中…</div></ul>
+    <button class="btn btn-primary" id="closeRankBtn">閉じる</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  // ---------- Firebase ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyCPXBVbdVCYHdop8KTlEQ310p2ZGPIoL04",
+    authDomain: "egg-man-8980e.firebaseapp.com",
+    projectId: "egg-man-8980e",
+    storageBucket: "egg-man-8980e.firebasestorage.app",
+    messagingSenderId: "664061097830",
+    appId: "1:664061097830:web:248329aa1cfadfb6d4baa7",
+    measurementId: "G-9G3C4S54YS"
+  };
+  let fsDb = null;
+  try {
+    firebase.initializeApp(firebaseConfig);
+    fsDb = firebase.firestore();
+  } catch(e){
+    console.error('Firebase init failed', e);
+  }
+
+  // ---------- player identity (one record per person, stored in cookies) ----------
+  function setCookie(name, value, days){
+    const expires = new Date(Date.now() + days*24*60*60*1000).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+  }
+  function getCookie(name){
+    const key = name + '=';
+    const parts = document.cookie.split(';');
+    for (let c of parts){
+      c = c.trim();
+      if (c.indexOf(key) === 0) return decodeURIComponent(c.slice(key.length));
+    }
+    return '';
+  }
+  function genId(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'p-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+  let playerId = getCookie('bd_player_id');
+  if (!playerId){
+    playerId = genId();
+    setCookie('bd_player_id', playerId, 3650);
+  }
+  let playerName = getCookie('bd_player_name') || '';
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  const nameScreen = document.getElementById('nameScreen');
+  const startScreen = document.getElementById('startScreen');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const rankingScreen = document.getElementById('rankingScreen');
+  const hud = document.getElementById('hud');
+  const timerBox = document.getElementById('timerBox');
+  const finalTimeEl = document.getElementById('finalTime');
+  const bestNote = document.getElementById('bestNote');
+  const nameInput2 = document.getElementById('nameInput2');
+  const curName = document.getElementById('curName');
+  const saveScoreBtn = document.getElementById('saveScoreBtn');
+  const rankList = document.getElementById('rankList');
+  const dbNote = document.getElementById('dbNote');
+
+  if (!fsDb){
+    dbNote.textContent = '※Firebaseに接続できないため、ランキングは利用できません。';
+  }
+
+  function showNameScreen(){
+    nameInput2.value = playerName;
+    nameScreen.classList.remove('hidden');
+    startScreen.classList.add('hidden');
+  }
+  function showStartScreen(){
+    curName.textContent = playerName;
+    nameScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+  }
+  if (!playerName){
+    showNameScreen();
+  } else {
+    showStartScreen();
+  }
+
+  document.getElementById('confirmNameBtn').addEventListener('click', ()=>{
+    const v = nameInput2.value.trim();
+    if (!v){ nameInput2.focus(); return; }
+    playerName = v.slice(0,10);
+    setCookie('bd_player_name', playerName, 3650);
+    showStartScreen();
+  });
+  document.getElementById('changeNameBtn').addEventListener('click', showNameScreen);
+
+  // ---------- audio (synth shoot sound, no external file needed) ----------
+  let audioCtx = null;
+  function ensureAudio(){
+    if (audioCtx) { if (audioCtx.state === 'suspended') audioCtx.resume(); return; }
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ audioCtx = null; }
+  }
+  function playShoot(){
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(680, now);
+    osc.frequency.exponentialRampToValueAtTime(160, now + 0.11);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.14);
+  }
+
+  // ---------- state ----------
+  let mode = 'start';
+  let arena = {x:0,y:0,size:0};
+  let player = {x:0,y:0,r:15,angle:0};
+  let bullets = [];
+  let spawnAcc = 0;
+  const BASE_SPAWN_INTERVAL = 950;
+  let elapsed = 0;
+  let finalTime = 0;
+  let lastTs = 0;
+  let scoreSaved = false;
+
+  const MAX_SPEED = 250;
+  const JOY_MAX = 62;
+  const BULLET_R = 11;
+  const BULLET_SPEED_MIN = 130;
+  const BULLET_SPEED_MAX = 190;
+  const BULLET_LIFE = 4000;
+
+  function speedMultiplier(t){ return Math.min(2.4, 1 + t*0.045); }
+  function spawnIntervalAt(t){ return Math.max(180, BASE_SPAWN_INTERVAL - t*35); }
+  function bulletsPerWaveAt(t){ return Math.min(5, 1 + Math.floor(t/12)); }
+
+  let joystick = {active:false, id:null, baseX:0, baseY:0, curX:0, curY:0};
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const size = Math.min(window.innerWidth, window.innerHeight) * 0.82;
+    arena.size = size;
+    arena.x = (window.innerWidth - size)/2;
+    arena.y = (window.innerHeight - size)/2;
+    if (mode === 'start'){
+      player.x = arena.x + arena.size/2;
+      player.y = arena.y + arena.size/2;
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function onTouchStart(e){
+    if (mode !== 'playing') return;
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    if (joystick.active) return;
+    joystick.active = true;
+    joystick.id = t.identifier;
+    joystick.baseX = t.clientX; joystick.baseY = t.clientY;
+    joystick.curX = t.clientX; joystick.curY = t.clientY;
+  }
+  function onTouchMove(e){
+    if (!joystick.active) return;
+    e.preventDefault();
+    for (const t of e.changedTouches){
+      if (t.identifier === joystick.id){ joystick.curX = t.clientX; joystick.curY = t.clientY; }
+    }
+  }
+  function onTouchEnd(e){
+    for (const t of e.changedTouches){
+      if (t.identifier === joystick.id){ joystick.active = false; joystick.id = null; }
+    }
+  }
+  canvas.addEventListener('touchstart', onTouchStart, {passive:false});
+  canvas.addEventListener('touchmove', onTouchMove, {passive:false});
+  canvas.addEventListener('touchend', onTouchEnd, {passive:false});
+  canvas.addEventListener('touchcancel', onTouchEnd, {passive:false});
+
+  let mouseDown = false;
+  canvas.addEventListener('mousedown', e=>{
+    if (mode !== 'playing') return;
+    mouseDown = true;
+    joystick.active = true; joystick.id = 'mouse';
+    joystick.baseX = e.clientX; joystick.baseY = e.clientY;
+    joystick.curX = e.clientX; joystick.curY = e.clientY;
+  });
+  window.addEventListener('mousemove', e=>{
+    if (!mouseDown) return;
+    joystick.curX = e.clientX; joystick.curY = e.clientY;
+  });
+  window.addEventListener('mouseup', ()=>{
+    mouseDown = false; joystick.active = false; joystick.id = null;
+  });
+
+  function joyVector(){
+    if (!joystick.active) return {dx:0, dy:0, mag:0};
+    let dx = joystick.curX - joystick.baseX;
+    let dy = joystick.curY - joystick.baseY;
+    const dist = Math.hypot(dx, dy);
+    const mag = Math.min(1, dist / JOY_MAX);
+    if (dist > 0){ dx /= dist; dy /= dist; }
+    return {dx, dy, mag};
+  }
+
+  function spawnOneBullet(mult){
+    const wall = Math.floor(Math.random()*4);
+    const L = arena.x, R = arena.x+arena.size, T = arena.y, B = arena.y+arena.size;
+    let x,y,baseAngle;
+    if (wall === 0){ x = L + Math.random()*arena.size; y = T+2; baseAngle = Math.PI/2; }
+    else if (wall === 1){ x = R-2; y = T + Math.random()*arena.size; baseAngle = Math.PI; }
+    else if (wall === 2){ x = L + Math.random()*arena.size; y = B-2; baseAngle = -Math.PI/2; }
+    else { x = L+2; y = T + Math.random()*arena.size; baseAngle = 0; }
+    const spread = (Math.random()-0.5) * 1.0;
+    const angle = baseAngle + spread;
+    const speed = (BULLET_SPEED_MIN + Math.random()*(BULLET_SPEED_MAX-BULLET_SPEED_MIN)) * mult;
+    bullets.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, born: performance.now() });
+    playShoot();
+  }
+  function spawnWave(t){
+    const count = bulletsPerWaveAt(t);
+    const mult = speedMultiplier(t);
+    for (let i=0;i<count;i++) spawnOneBullet(mult);
+  }
+
+  function updateBullets(dt, now){
+    const L = arena.x+BULLET_R, R = arena.x+arena.size-BULLET_R;
+    const T = arena.y+BULLET_R, B = arena.y+arena.size-BULLET_R;
+    for (let i=bullets.length-1; i>=0; i--){
+      const b = bullets[i];
+      b.x += b.vx*dt; b.y += b.vy*dt;
+      if (b.x < L){ b.x = L; b.vx = -b.vx; }
+      else if (b.x > R){ b.x = R; b.vx = -b.vx; }
+      if (b.y < T){ b.y = T; b.vy = -b.vy; }
+      else if (b.y > B){ b.y = B; b.vy = -b.vy; }
+      if (now - b.born > BULLET_LIFE){ bullets.splice(i,1); continue; }
+      const dist = Math.hypot(b.x-player.x, b.y-player.y);
+      if (dist < BULLET_R + player.r*0.65){ triggerGameOver(); return; }
+    }
+  }
+
+  function roundRectPath(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+  function drawArena(){
+    ctx.save();
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--wall').trim() || '#8b949e';
+    ctx.lineWidth = 12;
+    ctx.lineJoin = 'round';
+    roundRectPath(arena.x, arena.y, arena.size, arena.size, 18);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawPlayer(){
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+    ctx.beginPath();
+    ctx.moveTo(0, -player.r*1.3);
+    ctx.lineTo(player.r, player.r*0.85);
+    ctx.lineTo(-player.r, player.r*0.85);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0,-player.r*1.3,0,player.r*0.85);
+    grad.addColorStop(0,'#79c0ff'); grad.addColorStop(1,'#1f6feb');
+    ctx.fillStyle = grad;
+    ctx.shadowColor = 'rgba(88,166,255,0.7)'; ctx.shadowBlur = 14;
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawBullet(b){
+    const angle = Math.atan2(b.vy, b.vx);
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(angle);
+    const w = BULLET_R*2.1, h = BULLET_R*1.15;
+    roundRectPath(-w/2, -h/2, w, h, h/2);
+    const grad = ctx.createLinearGradient(-w/2,0,w/2,0);
+    grad.addColorStop(0,'#ff8a80'); grad.addColorStop(1,'#f85149');
+    ctx.fillStyle = grad;
+    ctx.shadowColor = 'rgba(248,81,73,0.6)'; ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawJoystick(){
+    if (!joystick.active) return;
+    const v = joyVector();
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, JOY_MAX, 0, Math.PI*2);
+    ctx.fillStyle = '#30363d'; ctx.fill();
+    ctx.beginPath(); ctx.arc(joystick.baseX + v.dx*JOY_MAX*v.mag, joystick.baseY + v.dy*JOY_MAX*v.mag, 24, 0, Math.PI*2);
+    ctx.fillStyle = '#58a6ff'; ctx.globalAlpha = 0.55; ctx.fill();
+    ctx.restore();
+  }
+  function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawArena();
+    for (const b of bullets) drawBullet(b);
+    drawPlayer();
+    drawJoystick();
+  }
+
+  function loop(ts){
+    if (!lastTs) lastTs = ts;
+    const dt = Math.min(0.04, (ts - lastTs)/1000);
+    lastTs = ts;
+
+    if (mode === 'playing'){
+      elapsed += dt;
+      timerBox.textContent = elapsed.toFixed(2);
+
+      const v = joyVector();
+      if (v.mag > 0.02){
+        const speed = MAX_SPEED * v.mag;
+        player.x += v.dx*speed*dt;
+        player.y += v.dy*speed*dt;
+        player.angle = Math.atan2(v.dy, v.dx) + Math.PI/2;
+      }
+      const L = arena.x+player.r, R = arena.x+arena.size-player.r;
+      const T = arena.y+player.r, B = arena.y+arena.size-player.r;
+      player.x = Math.max(L, Math.min(R, player.x));
+      player.y = Math.max(T, Math.min(B, player.y));
+
+      spawnAcc += dt*1000;
+      if (spawnAcc > spawnIntervalAt(elapsed)){
+        spawnAcc = 0;
+        spawnWave(elapsed);
+      }
+      updateBullets(dt, performance.now());
+    }
+
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function startGame(){
+    if (!playerName){ showNameScreen(); return; }
+    ensureAudio();
+    mode = 'playing';
+    bullets = [];
+    elapsed = 0;
+    spawnAcc = 0;
+    scoreSaved = false;
+    lastTs = 0;
+    player.x = arena.x + arena.size/2;
+    player.y = arena.y + arena.size/2;
+    player.angle = 0;
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    rankingScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    saveScoreBtn.disabled = false;
+    saveScoreBtn.textContent = '記録を登録する';
+    bestNote.textContent = '';
+  }
+  function triggerGameOver(){
+    mode = 'gameover';
+    finalTime = elapsed;
+    joystick.active = false;
+    hud.classList.add('hidden');
+    finalTimeEl.textContent = finalTime.toFixed(2) + '秒';
+    gameOverScreen.classList.remove('hidden');
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+  document.getElementById('showRankFromStart').addEventListener('click', ()=>openRanking());
+  document.getElementById('showRankFromOver').addEventListener('click', ()=>openRanking());
+  document.getElementById('closeRankBtn').addEventListener('click', ()=>{
+    rankingScreen.classList.add('hidden');
+  });
+
+  async function fetchScores(){
+    if (!fsDb) return [];
+    try {
+      const snap = await fsDb.collection('scores').orderBy('time','desc').limit(20).get();
+      const rows = [];
+      snap.forEach(doc=>rows.push(doc.data()));
+      return rows;
+    } catch(e){
+      console.error('fetchScores failed', e);
+      return [];
+    }
+  }
+
+  // one record per person: doc id = playerId, only overwritten if the new time is better
+  async function saveScore(time){
+    if (!fsDb || !playerName) return {ok:false};
+    const ref = fsDb.collection('scores').doc(playerId);
+    try {
+      const doc = await ref.get();
+      const prevBest = doc.exists ? Number(doc.data().time || 0) : null;
+      if (prevBest !== null && time <= prevBest){
+        return {ok:true, updated:false, best:prevBest};
+      }
+      await ref.set({
+        name: playerName,
+        time: time,
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      return {ok:true, updated:true, best:time};
+    } catch(e){
+      console.error('saveScore failed', e);
+      return {ok:false};
+    }
+  }
+
+  saveScoreBtn.addEventListener('click', async ()=>{
+    if (scoreSaved) return;
+    if (!playerName){ showNameScreen(); return; }
+    saveScoreBtn.disabled = true;
+    saveScoreBtn.textContent = '登録中…';
+    const res = await saveScore(Number(finalTime.toFixed(2)));
+    scoreSaved = true;
+    if (!res.ok){
+      saveScoreBtn.textContent = '登録に失敗しました';
+      bestNote.textContent = '';
+    } else if (res.updated){
+      saveScoreBtn.textContent = '登録しました';
+      bestNote.textContent = '自己ベストを更新しました！';
+    } else {
+      saveScoreBtn.textContent = '登録済み（自己ベスト維持）';
+      bestNote.textContent = '自己ベスト ' + res.best.toFixed(2) + '秒 の方が上のため、記録は更新されませんでした。';
+    }
+    openRanking();
+  });
+
+  async function openRanking(){
+    rankingScreen.classList.remove('hidden');
+    rankList.innerHTML = '<div class="rank-empty">読み込み中…</div>';
+    const rows = await fetchScores();
+    if (!rows || !rows.length){
+      rankList.innerHTML = '<div class="rank-empty">まだ記録がありません</div>';
+      return;
+    }
+    rows.sort((a,b)=>b.time-a.time);
+    rankList.innerHTML = rows.slice(0,20).map((r,i)=>{
+      const nm = (r.name||'ノーネーム').toString().slice(0,10);
+      const tm = Number(r.time||0).toFixed(2);
+      return `<li><span class="pos">${i+1}</span><span class="nm">${escapeHtml(nm)}</span><span class="tm">${tm}秒</span></li>`;
+    }).join('');
+  }
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+})();
+</script>
+</body>
+</html>
