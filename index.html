@@ -518,7 +518,7 @@
   // Core game state (shared by solo + battle)
   // =========================================================
   let mode = 'start'; // start|solo|battle
-  let arena = {x:0,y:0,size:0};
+  let arena = {x:0,y:0,w:0,h:0};
   let player = {x:0,y:0,r:15,angle:0, faceX:0, faceY:-1};
   let bullets = [];
   let shieldWall = null; // {cx,cy,angle,halfLen,born,life}
@@ -531,11 +531,16 @@
 
   function resize(){
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    const size = Math.min(window.innerWidth, window.innerHeight) * 0.82;
-    arena.size = size;
-    arena.x = (window.innerWidth-size)/2; arena.y = (window.innerHeight-size)/2;
+    const marginTop = 100, marginBottom = 140;
+    const availH = Math.max(260, window.innerHeight - marginTop - marginBottom);
+    let w = window.innerWidth * 0.94;
+    let h = Math.min(availH, w*1.55);
+    h = Math.max(h, w*0.55);
+    arena.w = w; arena.h = h;
+    arena.x = (window.innerWidth-w)/2;
+    arena.y = marginTop + (availH-h)/2;
     if (mode !== 'solo' && mode !== 'battle'){
-      player.x = arena.x+arena.size/2; player.y = arena.y+arena.size/2;
+      player.x = arena.x+arena.w/2; player.y = arena.y+arena.h/2;
     }
   }
   window.addEventListener('resize', resize); resize();
@@ -591,12 +596,12 @@
 
   function spawnOneBullet(mult){
     const wall = Math.floor(Math.random()*4);
-    const L=arena.x, R=arena.x+arena.size, T=arena.y, B=arena.y+arena.size;
+    const L=arena.x, R=arena.x+arena.w, T=arena.y, B=arena.y+arena.h;
     let x,y,baseAngle;
-    if (wall===0){ x=L+Math.random()*arena.size; y=T+2; baseAngle=Math.PI/2; }
-    else if (wall===1){ x=R-2; y=T+Math.random()*arena.size; baseAngle=Math.PI; }
-    else if (wall===2){ x=L+Math.random()*arena.size; y=B-2; baseAngle=-Math.PI/2; }
-    else { x=L+2; y=T+Math.random()*arena.size; baseAngle=0; }
+    if (wall===0){ x=L+Math.random()*arena.w; y=T+2; baseAngle=Math.PI/2; }
+    else if (wall===1){ x=R-2; y=T+Math.random()*arena.h; baseAngle=Math.PI; }
+    else if (wall===2){ x=L+Math.random()*arena.w; y=B-2; baseAngle=-Math.PI/2; }
+    else { x=L+2; y=T+Math.random()*arena.h; baseAngle=0; }
     const spread=(Math.random()-0.5)*1.0;
     const angle=baseAngle+spread;
     const speed=(BULLET_SPEED_MIN+Math.random()*(BULLET_SPEED_MAX-BULLET_SPEED_MIN))*mult;
@@ -636,8 +641,8 @@
   }
 
   function updateBullets(dt, now){
-    const L=arena.x+BULLET_R, R=arena.x+arena.size-BULLET_R;
-    const T=arena.y+BULLET_R, B=arena.y+arena.size-BULLET_R;
+    const L=arena.x+BULLET_R, R=arena.x+arena.w-BULLET_R;
+    const T=arena.y+BULLET_R, B=arena.y+arena.h-BULLET_R;
     for (let i=bullets.length-1;i>=0;i--){
       const b=bullets[i];
       b.x+=b.vx*dt; b.y+=b.vy*dt;
@@ -663,7 +668,7 @@
     ctx.save();
     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--wall').trim()||'#8b949e';
     ctx.lineWidth=12; ctx.lineJoin='round';
-    roundRectPath(arena.x, arena.y, arena.size, arena.size, 18);
+    roundRectPath(arena.x, arena.y, arena.w, arena.h, 18);
     ctx.stroke(); ctx.restore();
   }
   function drawPlayer(){
@@ -707,11 +712,32 @@
     ctx.fillStyle='#58a6ff'; ctx.globalAlpha=0.55; ctx.fill();
     ctx.restore();
   }
+  function drawOpponent(){
+    if (mode!=='battle' || !oppPos) return;
+    const ox = arena.x + oppPos.x*arena.w, oy = arena.y + oppPos.y*arena.h;
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.beginPath();
+    ctx.moveTo(0,-player.r*1.3); ctx.lineTo(player.r, player.r*0.85); ctx.lineTo(-player.r, player.r*0.85);
+    ctx.closePath();
+    const grad=ctx.createLinearGradient(0,-player.r*1.3,0,player.r*0.85);
+    grad.addColorStop(0,'#ffb199'); grad.addColorStop(1,'#d1442a');
+    ctx.fillStyle=grad; ctx.shadowColor='rgba(255,120,90,0.7)'; ctx.shadowBlur=14;
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.font='bold 12px "Zen Maru Gothic",sans-serif';
+    ctx.fillStyle='rgba(255,255,255,0.85)';
+    ctx.textAlign='center';
+    ctx.fillText(opponentName||'相手', ox, oy-player.r*1.3-8);
+    ctx.restore();
+  }
   function render(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawArena();
     drawShield();
     for (const b of bullets) drawBullet(b);
+    drawOpponent();
     drawPlayer();
     drawJoystick();
   }
@@ -730,14 +756,18 @@
         player.faceX=v.dx; player.faceY=v.dy;
         player.angle=Math.atan2(v.dy,v.dx)+Math.PI/2;
       }
-      const L=arena.x+player.r, R=arena.x+arena.size-player.r;
-      const T=arena.y+player.r, B=arena.y+arena.size-player.r;
+      const L=arena.x+player.r, R=arena.x+arena.w-player.r;
+      const T=arena.y+player.r, B=arena.y+arena.h-player.r;
       player.x=Math.max(L,Math.min(R,player.x));
       player.y=Math.max(T,Math.min(B,player.y));
 
       if (mode==='solo'){
         soloSpawnAcc += dt*1000;
         if (soloSpawnAcc > spawnIntervalAt(elapsed)){ soloSpawnAcc=0; spawnWave(elapsed); }
+      }
+      if (mode==='battle'){
+        posSyncAcc += dt*1000;
+        if (posSyncAcc > 120){ posSyncAcc=0; sendMyPosition(); }
       }
       updateBullets(dt, performance.now());
     }
@@ -754,7 +784,7 @@
   function startSolo(){
     ensureAudio();
     mode='solo'; bullets=[]; shieldWall=null; elapsed=0; soloSpawnAcc=0; scoreSaved=false; lastTs=0;
-    player.x=arena.x+arena.size/2; player.y=arena.y+arena.size/2; player.angle=0;
+    player.x=arena.x+arena.w/2; player.y=arena.y+arena.h/2; player.angle=0;
     allOverlaysHide();
     hud.classList.remove('hidden'); homeBtn.classList.remove('hidden');
     vsLabel.classList.add('hidden'); battleButtons.classList.add('hidden');
@@ -853,6 +883,7 @@
   let currentMatchId=null, currentMatchRef=null, isRanked=false, opponentId=null, opponentName='';
   let unsubMatch=null, unsubShots=null, unsubQueue=null, unsubRoom=null;
   let queueCollectionName=null, roomCode=null, rpAppliedForMatch=false;
+  let myRole=null, oppPos=null, posSyncAcc=0; // opponent visibility: normalized {x,y} 0..1 within arena
 
   function cleanupAll(){
     if (queueRetryTimer){ clearInterval(queueRetryTimer); queueRetryTimer=null; }
@@ -865,7 +896,7 @@
       fsDb.collection(queueCollectionName).doc(playerId).delete().catch(()=>{});
     }
     queueCollectionName=null; roomCode=null; currentMatchId=null; currentMatchRef=null;
-    opponentId=null; opponentName=''; rpAppliedForMatch=false;
+    opponentId=null; opponentName=''; rpAppliedForMatch=false; myRole=null; oppPos=null;
   }
 
   function enterMatch(matchId, ranked){
@@ -874,8 +905,12 @@
     currentMatchRef.get().then(doc=>{
       if (!doc.exists) return;
       const d = doc.data();
-      opponentId = d.p1Id===playerId ? d.p2Id : d.p1Id;
-      opponentName = d.p1Id===playerId ? d.p2Name : d.p1Name;
+      const iAmP1 = d.p1Id===playerId;
+      myRole = iAmP1 ? 'p1' : 'p2';
+      opponentId = iAmP1 ? d.p2Id : d.p1Id;
+      opponentName = iAmP1 ? d.p2Name : d.p1Name;
+      const oppField = iAmP1 ? d.p2Pos : d.p1Pos;
+      if (oppField) oppPos = oppField;
       startBattle();
       listenMatch();
       listenShots();
@@ -887,10 +922,18 @@
     unsubMatch = currentMatchRef.onSnapshot(doc=>{
       if (!doc.exists) return;
       const d = doc.data();
+      const oppField = myRole==='p1' ? d.p2Pos : d.p1Pos;
+      if (oppField) oppPos = oppField;
       if (d.status==='finished' && mode==='battle'){
         finishBattle(d.loserId);
       }
     });
+  }
+  function sendMyPosition(){
+    if (!currentMatchRef || !myRole) return;
+    const nx = (player.x-arena.x)/arena.w, ny = (player.y-arena.y)/arena.h;
+    const field = myRole==='p1' ? 'p1Pos' : 'p2Pos';
+    currentMatchRef.update({ [field]: {x:nx, y:ny} }).catch(()=>{});
   }
   function listenShots(){
     if (unsubShots) unsubShots();
@@ -906,8 +949,9 @@
 
   function startBattle(){
     mode='battle'; bullets=[]; shieldWall=null; elapsed=0; lastTs=0; joystick.active=false;
-    player.x=arena.x+arena.size/2; player.y=arena.y+arena.size/2; player.angle=0;
+    player.x=arena.x+arena.w/2; player.y=arena.y+arena.h/2; player.angle=0;
     player.faceX=0; player.faceY=-1;
+    oppPos=null; posSyncAcc=0;
     allOverlaysHide();
     hud.classList.remove('hidden'); homeBtn.classList.remove('hidden');
     vsLabel.classList.remove('hidden'); battleButtons.classList.remove('hidden');
