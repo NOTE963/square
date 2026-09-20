@@ -9,15 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d1117;
-    --panel:#161b22;
-    --panel-border:#30363d;
-    --wall:#8b949e;
-    --accent:#58a6ff;
-    --accent-dark:#1f6feb;
-    --text:#e6edf3;
-    --text-dim:#8b949e;
-    --gold:#e3b341;
+    --bg:#0d1117; --panel:#161b22; --panel-border:#30363d;
+    --wall:#8b949e; --accent:#58a6ff; --accent-dark:#1f6feb;
+    --text:#e6edf3; --text-dim:#8b949e; --gold:#e3b341; --danger:#f85149;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{
@@ -29,101 +23,164 @@
   #game{ display:block; width:100vw; height:100vh; touch-action:none; }
 
   #hud{
-    position:fixed; top:max(14px, env(safe-area-inset-top)); left:0; right:0;
-    display:flex; justify-content:center; pointer-events:none; z-index:5;
+    position:fixed; top:0; left:0; right:0; z-index:5; pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
+    padding:max(12px, env(safe-area-inset-top)) 14px 0;
   }
   #timerBox{
     background:rgba(22,27,34,0.75); border:1px solid var(--panel-border);
     border-radius:14px; padding:8px 22px; backdrop-filter:blur(6px);
     font-family:"Orbitron",sans-serif;
-    font-variant-numeric:tabular-nums; font-size:28px; font-weight:800;
+    font-variant-numeric:tabular-nums; font-size:26px; font-weight:800;
     letter-spacing:1px; color:var(--accent);
+  }
+  #vsLabel{
+    position:fixed; top:max(64px, calc(env(safe-area-inset-top) + 56px)); left:0; right:0;
+    text-align:center; font-size:13px; color:var(--text-dim); z-index:5; pointer-events:none;
+  }
+  #homeBtn{
+    position:fixed; top:max(14px, env(safe-area-inset-top)); left:14px; z-index:6;
+    width:42px; height:42px; border-radius:50%; border:1px solid var(--panel-border);
+    background:rgba(22,27,34,0.8); color:var(--text); font-size:19px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
 
   .overlay{
     position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
     background:rgba(13,17,23,0.72); backdrop-filter:blur(4px); z-index:10;
-    padding:20px;
+    padding:20px; overflow-y:auto;
   }
   .hidden{ display:none !important; }
 
   .card{
     background:var(--panel); border:1px solid var(--panel-border);
-    border-radius:20px; padding:28px 26px; width:100%; max-width:360px;
-    text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.5);
+    border-radius:20px; padding:26px 24px; width:100%; max-width:380px;
+    text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.5); margin:auto;
   }
-  .card h1{ font-size:26px; margin:0 0 6px; letter-spacing:0.5px; font-weight:900; }
-  .card .sub{ color:var(--text-dim); font-size:14px; margin-bottom:22px; line-height:1.6; }
+  .card h1{ font-size:24px; margin:0 0 6px; letter-spacing:0.5px; font-weight:900; }
+  .card .sub{ color:var(--text-dim); font-size:13px; margin-bottom:18px; line-height:1.6; }
   .triangle-icon{
-    width:0; height:0; margin:0 auto 14px;
-    border-left:20px solid transparent; border-right:20px solid transparent;
-    border-bottom:34px solid var(--accent);
+    width:0; height:0; margin:0 auto 12px;
+    border-left:18px solid transparent; border-right:18px solid transparent;
+    border-bottom:30px solid var(--accent);
     filter:drop-shadow(0 4px 10px rgba(88,166,255,0.5));
   }
 
   .btn{
-    display:block; width:100%; padding:14px 18px; margin-top:12px;
-    border:none; border-radius:12px; font-size:16px; font-weight:700;
+    display:block; width:100%; padding:13px 16px; margin-top:10px;
+    border:none; border-radius:12px; font-size:15px; font-weight:700;
     cursor:pointer; transition:transform .12s ease, opacity .12s ease;
     -webkit-user-select:none; user-select:none;
+    font-family:inherit;
   }
   .btn:active{ transform:scale(0.96); }
   .btn-primary{ background:linear-gradient(135deg,var(--accent),var(--accent-dark)); color:white; }
   .btn-secondary{ background:#21262d; color:var(--text); border:1px solid var(--panel-border); }
+  .btn-ranked{ background:linear-gradient(135deg,#e3b341,#a8781f); color:#1a1400; }
+  .btn-danger{ background:linear-gradient(135deg,#ff7b72,var(--danger)); color:white; }
   .btn:disabled{ opacity:0.5; cursor:default; }
   .link-btn{
     background:none; border:none; color:var(--text-dim); font-size:12px;
-    margin-top:14px; cursor:pointer; text-decoration:underline;
+    margin-top:12px; cursor:pointer; text-decoration:underline; font-family:inherit;
   }
 
   .result-time{
     font-family:"Orbitron",sans-serif;
-    font-size:44px; font-weight:800; color:var(--gold);
-    font-variant-numeric:tabular-nums; margin:6px 0 10px;
+    font-size:40px; font-weight:800; color:var(--gold);
+    font-variant-numeric:tabular-nums; margin:6px 0 8px;
   }
-  .best-note{ font-size:13px; color:var(--text-dim); margin-bottom:16px; min-height:18px; }
+  .best-note{ font-size:12px; color:var(--text-dim); margin-bottom:14px; min-height:16px; }
 
-  .player-name{
-    font-size:14px; color:var(--text-dim); margin-bottom:6px;
-  }
+  .player-name{ font-size:13px; color:var(--text-dim); margin-bottom:10px; }
   .player-name b{ color:var(--text); }
 
-  #nameInput, #nameInput2{
+  #nameInput2, #passInput{
     width:100%; padding:12px 14px; border-radius:10px; margin-bottom:10px;
     border:1px solid var(--panel-border); background:#0d1117; color:var(--text);
-    font-size:15px; text-align:center;
+    font-size:15px; text-align:center; font-family:inherit;
   }
-  #nameInput:focus, #nameInput2:focus{ outline:none; border-color:var(--accent); }
+  #nameInput2:focus, #passInput:focus{ outline:none; border-color:var(--accent); }
+
+  .rank-tabs{ display:flex; gap:8px; margin-bottom:10px; }
+  .rank-tab{
+    flex:1; padding:9px 4px; border-radius:10px; border:1px solid var(--panel-border);
+    background:#21262d; color:var(--text-dim); font-size:13px; font-weight:700; cursor:pointer;
+    font-family:inherit;
+  }
+  .rank-tab.active{ background:var(--accent); color:white; border-color:var(--accent); }
 
   .rank-list{
-    list-style:none; margin:0; padding:0; max-height:44vh; overflow-y:auto;
+    list-style:none; margin:0; padding:0; max-height:40vh; overflow-y:auto;
     text-align:left; border-top:1px solid var(--panel-border);
   }
   .rank-list li{
-    display:flex; align-items:center; gap:10px;
-    padding:10px 4px; border-bottom:1px solid var(--panel-border);
-    font-size:15px;
+    display:flex; align-items:center; gap:8px;
+    padding:9px 4px; border-bottom:1px solid var(--panel-border);
+    font-size:14px;
   }
-  .rank-list .pos{ width:26px; color:var(--text-dim); font-weight:700; flex-shrink:0; }
+  .rank-list .pos{ width:22px; color:var(--text-dim); font-weight:700; flex-shrink:0; font-size:13px;}
   .rank-list .nm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .rank-list .tm{ color:var(--accent); font-variant-numeric:tabular-nums; font-weight:700; flex-shrink:0; }
-  .rank-empty{ color:var(--text-dim); font-size:14px; padding:18px 0; }
-  .note{ color:var(--text-dim); font-size:12px; margin-top:14px; line-height:1.5; }
+  .rank-list .tm{ color:var(--accent); font-variant-numeric:tabular-nums; font-weight:700; flex-shrink:0; font-size:13px;}
+  .rank-empty{ color:var(--text-dim); font-size:13px; padding:16px 0; }
+  .note{ color:var(--text-dim); font-size:11px; margin-top:12px; line-height:1.5; }
+  .season-note{ font-size:12px; color:var(--text-dim); margin:6px 0 4px; }
+
+  .rank-badge{
+    display:inline-flex; align-items:center; gap:8px; padding:8px 16px;
+    border-radius:14px; margin:4px 0 10px; font-weight:800; font-size:14px;
+    border:1px solid rgba(255,255,255,0.15);
+  }
+  .rank-badge .diamond{
+    width:16px; height:16px; transform:rotate(45deg); border-radius:3px; flex-shrink:0;
+  }
+  .rank-rp{ font-family:"Orbitron",sans-serif; font-size:12px; opacity:0.85; }
+
+  .spinner{
+    width:44px; height:44px; margin:6px auto 18px; border-radius:50%;
+    border:4px solid var(--panel-border); border-top-color:var(--accent);
+    animation:spin 0.9s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  #battleButtons{
+    position:fixed; left:0; right:0; bottom:0; z-index:6;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    padding:0 22px max(20px, env(safe-area-inset-bottom));
+    pointer-events:none;
+  }
+  .action-btn{
+    pointer-events:auto;
+    width:78px; height:78px; border-radius:50%; border:2px solid rgba(255,255,255,0.25);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:11px; font-weight:800; color:white; gap:2px;
+    -webkit-user-select:none; user-select:none;
+  }
+  .action-btn .ic{ font-size:24px; }
+  #wallBtn{ background:radial-gradient(circle at 35% 30%, #4ea1ff, #17335c); }
+  #shootBtn{ background:radial-gradient(circle at 35% 30%, #ff8a80, #7a1410); }
+  #wallBtn:active, #shootBtn:active{ transform:scale(0.92); }
 </style>
 </head>
 <body>
 
 <canvas id="game"></canvas>
 
+<div id="homeBtn" class="hidden">🏠</div>
 <div id="hud" class="hidden"><div id="timerBox">0.00</div></div>
+<div id="vsLabel" class="hidden"></div>
+
+<div id="battleButtons" class="hidden">
+  <div class="action-btn" id="wallBtn"><div class="ic">🛡️</div>壁設置</div>
+  <div class="action-btn" id="shootBtn"><div class="ic">🔫</div>発射</div>
+</div>
 
 <div id="nameScreen" class="overlay hidden">
   <div class="card">
     <div class="triangle-icon"></div>
     <h1>ニックネーム設定</h1>
-    <div class="sub">ランキングに記録するには、まずニックネームを設定してください。</div>
+    <div class="sub">ランキング・対戦に参加するには、まずニックネームを設定してください。</div>
     <input id="nameInput2" type="text" maxlength="10" placeholder="ニックネーム（10文字まで）">
-    <button class="btn btn-primary" id="confirmNameBtn">決定してゲームへ</button>
+    <button class="btn btn-primary" id="confirmNameBtn">決定してホームへ</button>
   </div>
 </div>
 
@@ -132,11 +189,37 @@
     <div class="triangle-icon"></div>
     <h1>三角が生き残る</h1>
     <div class="player-name">プレイヤー: <b id="curName">-</b></div>
-    <div class="sub">ジョイスティックで三角を操作して、四方の壁から飛んでくる弾を避けよう。時間が経つほど弾は速く、数も増える。<br>ランキングは一人一記録（自己ベスト）まで。</div>
-    <button class="btn btn-primary" id="startBtn">スタート</button>
+    <div id="rankBadgeHome" class="rank-badge" style="background:#222;"><span class="diamond" style="background:#888;"></span><span id="rankBadgeText">-</span></div>
+    <div class="season-note" id="seasonNote"></div>
+
+    <button class="btn btn-primary" id="soloBtn">ソロプレイ（タイムアタック）</button>
+    <button class="btn btn-secondary" id="casualBtn">ランダムマッチ（対戦）</button>
+    <button class="btn btn-secondary" id="passBtn">合言葉マッチ（対戦）</button>
+    <button class="btn btn-ranked" id="rankedBtn">ランクマッチ（ランダムのみ）</button>
     <button class="btn btn-secondary" id="showRankFromStart">ランキングを見る</button>
     <button class="link-btn" id="changeNameBtn">ニックネームを変更する</button>
     <div class="note" id="dbNote"></div>
+  </div>
+</div>
+
+<div id="passphraseScreen" class="overlay hidden">
+  <div class="card">
+    <h1>合言葉マッチ</h1>
+    <div class="sub">合言葉を決めて部屋を作るか、相手の合言葉を入力して参加しよう。</div>
+    <input id="passInput" type="text" maxlength="12" placeholder="合言葉（英数字）">
+    <button class="btn btn-primary" id="createRoomBtn">部屋を作る</button>
+    <button class="btn btn-secondary" id="joinRoomBtn">参加する</button>
+    <div class="best-note" id="passNote"></div>
+    <button class="btn btn-secondary" id="passBackBtn">戻る</button>
+  </div>
+</div>
+
+<div id="queueScreen" class="overlay hidden">
+  <div class="card">
+    <h1 id="queueTitle">対戦相手を探しています…</h1>
+    <div class="spinner"></div>
+    <div class="sub" id="queueSub">しばらくお待ちください</div>
+    <button class="btn btn-danger" id="cancelQueueBtn">キャンセル</button>
   </div>
 </div>
 
@@ -149,12 +232,28 @@
     <button class="btn btn-primary" id="saveScoreBtn">記録を登録する</button>
     <button class="btn btn-secondary" id="retryBtn">もう一度プレイ</button>
     <button class="btn btn-secondary" id="showRankFromOver">ランキングを見る</button>
+    <button class="btn btn-secondary" id="homeFromOverBtn">ホームに戻る</button>
+  </div>
+</div>
+
+<div id="battleResultScreen" class="overlay hidden">
+  <div class="card">
+    <h1 id="battleResultTitle">結果</h1>
+    <div class="sub" id="battleResultSub"></div>
+    <div class="best-note" id="rpChangeNote"></div>
+    <button class="btn btn-primary" id="rematchBtn">もう一度対戦</button>
+    <button class="btn btn-secondary" id="homeFromBattleBtn">ホームに戻る</button>
   </div>
 </div>
 
 <div id="rankingScreen" class="overlay hidden">
   <div class="card">
     <h1>ランキング</h1>
+    <div class="rank-tabs">
+      <button class="rank-tab active" id="tabTime">生存タイム</button>
+      <button class="rank-tab" id="tabRp">ランクポイント</button>
+    </div>
+    <div class="season-note" id="seasonNoteRank"></div>
     <ul class="rank-list" id="rankList"><div class="rank-empty">読み込み中…</div></ul>
     <button class="btn btn-primary" id="closeRankBtn">閉じる</button>
   </div>
@@ -164,7 +263,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  // ---------- Firebase ----------
+  // =========================================================
+  // Firebase
+  // =========================================================
   const firebaseConfig = {
     apiKey: "AIzaSyCPXBVbdVCYHdop8KTlEQ310p2ZGPIoL04",
     authDomain: "egg-man-8980e.firebaseapp.com",
@@ -178,19 +279,19 @@
   try {
     firebase.initializeApp(firebaseConfig);
     fsDb = firebase.firestore();
-  } catch(e){
-    console.error('Firebase init failed', e);
-  }
+  } catch(e){ console.error('Firebase init failed', e); }
+  const FV = () => firebase.firestore.FieldValue;
 
-  // ---------- player identity (one record per person, stored in cookies) ----------
+  // =========================================================
+  // Cookies + player identity
+  // =========================================================
   function setCookie(name, value, days){
     const expires = new Date(Date.now() + days*24*60*60*1000).toUTCString();
     document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
   }
   function getCookie(name){
     const key = name + '=';
-    const parts = document.cookie.split(';');
-    for (let c of parts){
+    for (let c of document.cookie.split(';')){
       c = c.trim();
       if (c.indexOf(key) === 0) return decodeURIComponent(c.slice(key.length));
     }
@@ -201,142 +302,256 @@
     return 'p-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
   let playerId = getCookie('bd_player_id');
-  if (!playerId){
-    playerId = genId();
-    setCookie('bd_player_id', playerId, 3650);
-  }
+  if (!playerId){ playerId = genId(); setCookie('bd_player_id', playerId, 3650); }
   let playerName = getCookie('bd_player_name') || '';
 
+  // =========================================================
+  // Rank system
+  // =========================================================
+  const TIERS = [
+    {name:'ブロンズ', base:0,    color:'#b06a3d'},
+    {name:'シルバー', base:400,  color:'#9aa5ad'},
+    {name:'ゴールド', base:800,  color:'#d9b34a'},
+    {name:'プラチナ', base:1200, color:'#3fd1c7'},
+    {name:'ダイヤモンド', base:1600, color:'#4d8dff'},
+  ];
+  const DIV_LABELS = ['IV','III','II','I'];
+  function getRankInfo(rp){
+    rp = Math.max(0, rp||0);
+    if (rp >= 3500) return {tier:'オーバーロード', div:null, color:'#8a1414'};
+    if (rp >= 3000) return {tier:'アンリアル', div:null, color:'#5b3df5'};
+    if (rp >= 2500) return {tier:'チャンピオン', div:null, color:'#e63946'};
+    if (rp >= 2000) return {tier:'マスター', div:null, color:'#9b5de5'};
+    for (let i=TIERS.length-1; i>=0; i--){
+      if (rp >= TIERS[i].base){
+        const idx = Math.min(3, Math.floor((rp-TIERS[i].base)/100));
+        return {tier:TIERS[i].name, div:DIV_LABELS[idx], color:TIERS[i].color};
+      }
+    }
+    return {tier:'ブロンズ', div:'IV', color:TIERS[0].color};
+  }
+  function rankLabel(info){ return info.tier + (info.div ? ' ' + info.div : ''); }
+  function currentSeasonKey(){
+    const now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+  function daysUntilReset(){
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth()+1, 1, 0,0,0,0);
+    return Math.max(0, Math.ceil((next - now)/(24*3600*1000)));
+  }
+  const SEASON = currentSeasonKey();
+
+  async function getMyDisplayRp(){
+    if (!fsDb) return 0;
+    try {
+      const doc = await fsDb.collection('ranks').doc(playerId).get();
+      if (!doc.exists) return 0;
+      const d = doc.data();
+      return d.season === SEASON ? (d.rp||0) : 0;
+    } catch(e){ return 0; }
+  }
+  async function applyRankDelta(delta){
+    if (!fsDb || !playerName) return 0;
+    const ref = fsDb.collection('ranks').doc(playerId);
+    try {
+      return await fsDb.runTransaction(async (tx)=>{
+        const doc = await tx.get(ref);
+        let rp = 0;
+        if (doc.exists && doc.data().season === SEASON) rp = doc.data().rp || 0;
+        rp = Math.max(0, rp + delta);
+        tx.set(ref, {name:playerName, rp, season:SEASON});
+        return rp;
+      });
+    } catch(e){ console.error('applyRankDelta failed', e); return 0; }
+  }
+
+  // =========================================================
+  // DOM refs
+  // =========================================================
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
-  const nameScreen = document.getElementById('nameScreen');
-  const startScreen = document.getElementById('startScreen');
-  const gameOverScreen = document.getElementById('gameOverScreen');
-  const rankingScreen = document.getElementById('rankingScreen');
+  const homeBtn = document.getElementById('homeBtn');
   const hud = document.getElementById('hud');
   const timerBox = document.getElementById('timerBox');
-  const finalTimeEl = document.getElementById('finalTime');
-  const bestNote = document.getElementById('bestNote');
+  const vsLabel = document.getElementById('vsLabel');
+  const battleButtons = document.getElementById('battleButtons');
+  const wallBtn = document.getElementById('wallBtn');
+  const shootBtn = document.getElementById('shootBtn');
+
+  const nameScreen = document.getElementById('nameScreen');
+  const startScreen = document.getElementById('startScreen');
+  const passphraseScreen = document.getElementById('passphraseScreen');
+  const queueScreen = document.getElementById('queueScreen');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const battleResultScreen = document.getElementById('battleResultScreen');
+  const rankingScreen = document.getElementById('rankingScreen');
+
   const nameInput2 = document.getElementById('nameInput2');
   const curName = document.getElementById('curName');
-  const saveScoreBtn = document.getElementById('saveScoreBtn');
-  const rankList = document.getElementById('rankList');
+  const rankBadgeHome = document.getElementById('rankBadgeHome');
+  const rankBadgeText = document.getElementById('rankBadgeText');
+  const seasonNote = document.getElementById('seasonNote');
   const dbNote = document.getElementById('dbNote');
 
-  if (!fsDb){
-    dbNote.textContent = '※Firebaseに接続できないため、ランキングは利用できません。';
+  const passInput = document.getElementById('passInput');
+  const passNote = document.getElementById('passNote');
+  const queueTitle = document.getElementById('queueTitle');
+  const queueSub = document.getElementById('queueSub');
+
+  const finalTimeEl = document.getElementById('finalTime');
+  const bestNote = document.getElementById('bestNote');
+  const saveScoreBtn = document.getElementById('saveScoreBtn');
+
+  const battleResultTitle = document.getElementById('battleResultTitle');
+  const battleResultSub = document.getElementById('battleResultSub');
+  const rpChangeNote = document.getElementById('rpChangeNote');
+
+  const rankList = document.getElementById('rankList');
+  const seasonNoteRank = document.getElementById('seasonNoteRank');
+  const tabTime = document.getElementById('tabTime');
+  const tabRp = document.getElementById('tabRp');
+
+  if (!fsDb){ dbNote.textContent = '※Firebaseに接続できないため、オンライン機能は利用できません。'; }
+
+  function allOverlaysHide(){
+    [nameScreen,startScreen,passphraseScreen,queueScreen,gameOverScreen,battleResultScreen,rankingScreen]
+      .forEach(el=>el.classList.add('hidden'));
   }
 
+  // =========================================================
+  // Name screen
+  // =========================================================
   function showNameScreen(){
     nameInput2.value = playerName;
+    allOverlaysHide();
     nameScreen.classList.remove('hidden');
-    startScreen.classList.add('hidden');
+    homeBtn.classList.add('hidden'); hud.classList.add('hidden');
+    vsLabel.classList.add('hidden'); battleButtons.classList.add('hidden');
   }
-  function showStartScreen(){
-    curName.textContent = playerName;
-    nameScreen.classList.add('hidden');
+  async function showHome(){
+    cleanupAll();
+    mode = 'start';
+    allOverlaysHide();
     startScreen.classList.remove('hidden');
+    homeBtn.classList.add('hidden'); hud.classList.add('hidden');
+    vsLabel.classList.add('hidden'); battleButtons.classList.add('hidden');
+    curName.textContent = playerName;
+    seasonNote.textContent = '今シーズン: ' + SEASON + '（残り ' + daysUntilReset() + ' 日でリセット）';
+    const rp = await getMyDisplayRp();
+    const info = getRankInfo(rp);
+    rankBadgeHome.style.background = info.color + '22';
+    rankBadgeHome.style.borderColor = info.color;
+    rankBadgeHome.querySelector('.diamond').style.background = info.color;
+    rankBadgeText.innerHTML = rankLabel(info) + '<span class="rank-rp"> ・ ' + rp + 'RP</span>';
   }
-  if (!playerName){
-    showNameScreen();
-  } else {
-    showStartScreen();
-  }
+  if (!playerName){ showNameScreen(); }
 
   document.getElementById('confirmNameBtn').addEventListener('click', ()=>{
     const v = nameInput2.value.trim();
     if (!v){ nameInput2.focus(); return; }
     playerName = v.slice(0,10);
     setCookie('bd_player_name', playerName, 3650);
-    showStartScreen();
+    showHome();
   });
   document.getElementById('changeNameBtn').addEventListener('click', showNameScreen);
+  homeBtn.addEventListener('click', showHome);
 
-  // ---------- audio (synth shoot sound, no external file needed) ----------
+  // =========================================================
+  // Audio
+  // =========================================================
   let audioCtx = null;
   function ensureAudio(){
-    if (audioCtx) { if (audioCtx.state === 'suspended') audioCtx.resume(); return; }
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-    catch(e){ audioCtx = null; }
+    if (audioCtx){ if (audioCtx.state==='suspended') audioCtx.resume(); return; }
+    try { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ audioCtx=null; }
   }
   function playShoot(){
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'square';
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type='square';
     osc.frequency.setValueAtTime(680, now);
-    osc.frequency.exponentialRampToValueAtTime(160, now + 0.11);
+    osc.frequency.exponentialRampToValueAtTime(160, now+0.11);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + 0.14);
+    gain.gain.exponentialRampToValueAtTime(0.16, now+0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.13);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now+0.14);
+  }
+  function playShield(){
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.linearRampToValueAtTime(500, now+0.18);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.14, now+0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.22);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now+0.24);
+  }
+  function playBoom(){
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type='sawtooth';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now+0.4);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.25, now+0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.45);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now+0.46);
   }
 
-  // ---------- state ----------
-  let mode = 'start';
+  // =========================================================
+  // Core game state (shared by solo + battle)
+  // =========================================================
+  let mode = 'start'; // start|solo|battle
   let arena = {x:0,y:0,size:0};
-  let player = {x:0,y:0,r:15,angle:0};
+  let player = {x:0,y:0,r:15,angle:0, faceX:0, faceY:-1};
   let bullets = [];
-  let spawnAcc = 0;
-  const BASE_SPAWN_INTERVAL = 950;
+  let shieldWall = null; // {cx,cy,angle,halfLen,born,life}
   let elapsed = 0;
-  let finalTime = 0;
   let lastTs = 0;
-  let scoreSaved = false;
-
-  const MAX_SPEED = 250;
-  const JOY_MAX = 62;
-  const BULLET_R = 11;
-  const BULLET_SPEED_MIN = 130;
-  const BULLET_SPEED_MAX = 190;
-  const BULLET_LIFE = 4000;
-
-  function speedMultiplier(t){ return Math.min(2.4, 1 + t*0.045); }
-  function spawnIntervalAt(t){ return Math.max(180, BASE_SPAWN_INTERVAL - t*35); }
-  function bulletsPerWaveAt(t){ return Math.min(5, 1 + Math.floor(t/12)); }
-
   let joystick = {active:false, id:null, baseX:0, baseY:0, curX:0, curY:0};
 
+  const MAX_SPEED = 250, JOY_MAX = 62, BULLET_R = 11;
+  const BULLET_SPEED_MIN = 130, BULLET_SPEED_MAX = 190, BULLET_LIFE = 4000;
+
   function resize(){
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     const size = Math.min(window.innerWidth, window.innerHeight) * 0.82;
     arena.size = size;
-    arena.x = (window.innerWidth - size)/2;
-    arena.y = (window.innerHeight - size)/2;
-    if (mode === 'start'){
-      player.x = arena.x + arena.size/2;
-      player.y = arena.y + arena.size/2;
+    arena.x = (window.innerWidth-size)/2; arena.y = (window.innerHeight-size)/2;
+    if (mode !== 'solo' && mode !== 'battle'){
+      player.x = arena.x+arena.size/2; player.y = arena.y+arena.size/2;
     }
   }
-  window.addEventListener('resize', resize);
-  resize();
+  window.addEventListener('resize', resize); resize();
 
   function onTouchStart(e){
-    if (mode !== 'playing') return;
+    if (mode!=='solo' && mode!=='battle') return;
+    if (e.target.closest && e.target.closest('#battleButtons')) return;
     e.preventDefault();
     const t = e.changedTouches[0];
     if (joystick.active) return;
-    joystick.active = true;
-    joystick.id = t.identifier;
-    joystick.baseX = t.clientX; joystick.baseY = t.clientY;
-    joystick.curX = t.clientX; joystick.curY = t.clientY;
+    joystick.active=true; joystick.id=t.identifier;
+    joystick.baseX=t.clientX; joystick.baseY=t.clientY;
+    joystick.curX=t.clientX; joystick.curY=t.clientY;
   }
   function onTouchMove(e){
     if (!joystick.active) return;
     e.preventDefault();
     for (const t of e.changedTouches){
-      if (t.identifier === joystick.id){ joystick.curX = t.clientX; joystick.curY = t.clientY; }
+      if (t.identifier===joystick.id){ joystick.curX=t.clientX; joystick.curY=t.clientY; }
     }
   }
   function onTouchEnd(e){
     for (const t of e.changedTouches){
-      if (t.identifier === joystick.id){ joystick.active = false; joystick.id = null; }
+      if (t.identifier===joystick.id){ joystick.active=false; joystick.id=null; }
     }
   }
   canvas.addEventListener('touchstart', onTouchStart, {passive:false});
@@ -344,279 +559,577 @@
   canvas.addEventListener('touchend', onTouchEnd, {passive:false});
   canvas.addEventListener('touchcancel', onTouchEnd, {passive:false});
 
-  let mouseDown = false;
+  let mouseDown=false;
   canvas.addEventListener('mousedown', e=>{
-    if (mode !== 'playing') return;
-    mouseDown = true;
-    joystick.active = true; joystick.id = 'mouse';
-    joystick.baseX = e.clientX; joystick.baseY = e.clientY;
-    joystick.curX = e.clientX; joystick.curY = e.clientY;
+    if (mode!=='solo' && mode!=='battle') return;
+    mouseDown=true; joystick.active=true; joystick.id='mouse';
+    joystick.baseX=e.clientX; joystick.baseY=e.clientY;
+    joystick.curX=e.clientX; joystick.curY=e.clientY;
   });
-  window.addEventListener('mousemove', e=>{
-    if (!mouseDown) return;
-    joystick.curX = e.clientX; joystick.curY = e.clientY;
-  });
-  window.addEventListener('mouseup', ()=>{
-    mouseDown = false; joystick.active = false; joystick.id = null;
-  });
+  window.addEventListener('mousemove', e=>{ if(mouseDown){ joystick.curX=e.clientX; joystick.curY=e.clientY; } });
+  window.addEventListener('mouseup', ()=>{ mouseDown=false; joystick.active=false; joystick.id=null; });
 
   function joyVector(){
-    if (!joystick.active) return {dx:0, dy:0, mag:0};
-    let dx = joystick.curX - joystick.baseX;
-    let dy = joystick.curY - joystick.baseY;
-    const dist = Math.hypot(dx, dy);
-    const mag = Math.min(1, dist / JOY_MAX);
-    if (dist > 0){ dx /= dist; dy /= dist; }
-    return {dx, dy, mag};
+    if (!joystick.active) return {dx:0,dy:0,mag:0};
+    let dx=joystick.curX-joystick.baseX, dy=joystick.curY-joystick.baseY;
+    const dist=Math.hypot(dx,dy); const mag=Math.min(1, dist/JOY_MAX);
+    if (dist>0){ dx/=dist; dy/=dist; }
+    return {dx,dy,mag};
   }
+
+  function speedMultiplier(t){ return Math.min(2.4, 1+t*0.045); }
+  function spawnIntervalAt(t){ return Math.max(180, 950-t*35); }
+  function bulletsPerWaveAt(t){ return Math.min(5, 1+Math.floor(t/12)); }
 
   function spawnOneBullet(mult){
     const wall = Math.floor(Math.random()*4);
-    const L = arena.x, R = arena.x+arena.size, T = arena.y, B = arena.y+arena.size;
+    const L=arena.x, R=arena.x+arena.size, T=arena.y, B=arena.y+arena.size;
     let x,y,baseAngle;
-    if (wall === 0){ x = L + Math.random()*arena.size; y = T+2; baseAngle = Math.PI/2; }
-    else if (wall === 1){ x = R-2; y = T + Math.random()*arena.size; baseAngle = Math.PI; }
-    else if (wall === 2){ x = L + Math.random()*arena.size; y = B-2; baseAngle = -Math.PI/2; }
-    else { x = L+2; y = T + Math.random()*arena.size; baseAngle = 0; }
-    const spread = (Math.random()-0.5) * 1.0;
-    const angle = baseAngle + spread;
-    const speed = (BULLET_SPEED_MIN + Math.random()*(BULLET_SPEED_MAX-BULLET_SPEED_MIN)) * mult;
-    bullets.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, born: performance.now() });
+    if (wall===0){ x=L+Math.random()*arena.size; y=T+2; baseAngle=Math.PI/2; }
+    else if (wall===1){ x=R-2; y=T+Math.random()*arena.size; baseAngle=Math.PI; }
+    else if (wall===2){ x=L+Math.random()*arena.size; y=B-2; baseAngle=-Math.PI/2; }
+    else { x=L+2; y=T+Math.random()*arena.size; baseAngle=0; }
+    const spread=(Math.random()-0.5)*1.0;
+    const angle=baseAngle+spread;
+    const speed=(BULLET_SPEED_MIN+Math.random()*(BULLET_SPEED_MAX-BULLET_SPEED_MIN))*mult;
+    bullets.push({x,y,vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, born:performance.now()});
     playShoot();
   }
   function spawnWave(t){
-    const count = bulletsPerWaveAt(t);
-    const mult = speedMultiplier(t);
+    const count=bulletsPerWaveAt(t), mult=speedMultiplier(t);
     for (let i=0;i<count;i++) spawnOneBullet(mult);
   }
 
-  function updateBullets(dt, now){
-    const L = arena.x+BULLET_R, R = arena.x+arena.size-BULLET_R;
-    const T = arena.y+BULLET_R, B = arena.y+arena.size-BULLET_R;
-    for (let i=bullets.length-1; i>=0; i--){
-      const b = bullets[i];
-      b.x += b.vx*dt; b.y += b.vy*dt;
-      if (b.x < L){ b.x = L; b.vx = -b.vx; }
-      else if (b.x > R){ b.x = R; b.vx = -b.vx; }
-      if (b.y < T){ b.y = T; b.vy = -b.vy; }
-      else if (b.y > B){ b.y = B; b.vy = -b.vy; }
-      if (now - b.born > BULLET_LIFE){ bullets.splice(i,1); continue; }
-      const dist = Math.hypot(b.x-player.x, b.y-player.y);
-      if (dist < BULLET_R + player.r*0.65){ triggerGameOver(); return; }
+  function placeShield(){
+    const life=6000;
+    const fx=player.faceX, fy=player.faceY;
+    const faceAngle=Math.atan2(fy,fx);
+    shieldWall = {
+      cx: player.x+fx*32, cy: player.y+fy*32,
+      angle: faceAngle+Math.PI/2, halfLen:45, born:performance.now(), life
+    };
+    playShield();
+  }
+
+  function reflectOffShield(b){
+    if (!shieldWall) return;
+    if (performance.now()-shieldWall.born > shieldWall.life){ shieldWall=null; return; }
+    const dx=b.x-shieldWall.cx, dy=b.y-shieldWall.cy;
+    const cosA=Math.cos(-shieldWall.angle), sinA=Math.sin(-shieldWall.angle);
+    const localX = dx*cosA - dy*sinA;
+    const localY = dx*sinA + dy*cosA;
+    if (Math.abs(localX) <= shieldWall.halfLen && Math.abs(localY) <= (BULLET_R+5)){
+      const nx=-Math.sin(shieldWall.angle), ny=Math.cos(shieldWall.angle);
+      const vn = b.vx*nx + b.vy*ny;
+      b.vx -= 2*vn*nx; b.vy -= 2*vn*ny;
+      const sign = localY>=0 ? 1 : -1;
+      b.x += nx*sign*(BULLET_R+6); b.y += ny*sign*(BULLET_R+6);
     }
+  }
+
+  function updateBullets(dt, now){
+    const L=arena.x+BULLET_R, R=arena.x+arena.size-BULLET_R;
+    const T=arena.y+BULLET_R, B=arena.y+arena.size-BULLET_R;
+    for (let i=bullets.length-1;i>=0;i--){
+      const b=bullets[i];
+      b.x+=b.vx*dt; b.y+=b.vy*dt;
+      if (b.x<L){ b.x=L; b.vx=-b.vx; } else if (b.x>R){ b.x=R; b.vx=-b.vx; }
+      if (b.y<T){ b.y=T; b.vy=-b.vy; } else if (b.y>B){ b.y=B; b.vy=-b.vy; }
+      reflectOffShield(b);
+      if (now-b.born > BULLET_LIFE){ bullets.splice(i,1); continue; }
+      const dist=Math.hypot(b.x-player.x, b.y-player.y);
+      if (dist < BULLET_R + player.r*0.65){ onPlayerHit(); return; }
+    }
+  }
+  function onPlayerHit(){
+    if (mode==='solo') triggerGameOver();
+    else if (mode==='battle') reportDeath();
   }
 
   function roundRectPath(x,y,w,h,r){
     ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
   }
   function drawArena(){
     ctx.save();
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--wall').trim() || '#8b949e';
-    ctx.lineWidth = 12;
-    ctx.lineJoin = 'round';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--wall').trim()||'#8b949e';
+    ctx.lineWidth=12; ctx.lineJoin='round';
     roundRectPath(arena.x, arena.y, arena.size, arena.size, 18);
-    ctx.stroke();
-    ctx.restore();
+    ctx.stroke(); ctx.restore();
   }
   function drawPlayer(){
     ctx.save();
-    ctx.translate(player.x, player.y);
-    ctx.rotate(player.angle);
+    ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.beginPath();
-    ctx.moveTo(0, -player.r*1.3);
-    ctx.lineTo(player.r, player.r*0.85);
-    ctx.lineTo(-player.r, player.r*0.85);
+    ctx.moveTo(0,-player.r*1.3); ctx.lineTo(player.r, player.r*0.85); ctx.lineTo(-player.r, player.r*0.85);
     ctx.closePath();
-    const grad = ctx.createLinearGradient(0,-player.r*1.3,0,player.r*0.85);
+    const grad=ctx.createLinearGradient(0,-player.r*1.3,0,player.r*0.85);
     grad.addColorStop(0,'#79c0ff'); grad.addColorStop(1,'#1f6feb');
-    ctx.fillStyle = grad;
-    ctx.shadowColor = 'rgba(88,166,255,0.7)'; ctx.shadowBlur = 14;
-    ctx.fill();
-    ctx.restore();
+    ctx.fillStyle=grad; ctx.shadowColor='rgba(88,166,255,0.7)'; ctx.shadowBlur=14;
+    ctx.fill(); ctx.restore();
   }
   function drawBullet(b){
-    const angle = Math.atan2(b.vy, b.vx);
-    ctx.save();
-    ctx.translate(b.x, b.y);
-    ctx.rotate(angle);
-    const w = BULLET_R*2.1, h = BULLET_R*1.15;
-    roundRectPath(-w/2, -h/2, w, h, h/2);
-    const grad = ctx.createLinearGradient(-w/2,0,w/2,0);
+    const angle=Math.atan2(b.vy,b.vx);
+    ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(angle);
+    const w=BULLET_R*2.1, h=BULLET_R*1.15;
+    roundRectPath(-w/2,-h/2,w,h,h/2);
+    const grad=ctx.createLinearGradient(-w/2,0,w/2,0);
     grad.addColorStop(0,'#ff8a80'); grad.addColorStop(1,'#f85149');
-    ctx.fillStyle = grad;
-    ctx.shadowColor = 'rgba(248,81,73,0.6)'; ctx.shadowBlur = 10;
-    ctx.fill();
-    ctx.restore();
+    ctx.fillStyle=grad; ctx.shadowColor='rgba(248,81,73,0.6)'; ctx.shadowBlur=10;
+    ctx.fill(); ctx.restore();
+  }
+  function drawShield(){
+    if (!shieldWall) return;
+    if (performance.now()-shieldWall.born > shieldWall.life){ shieldWall=null; return; }
+    ctx.save();
+    ctx.translate(shieldWall.cx, shieldWall.cy); ctx.rotate(shieldWall.angle);
+    ctx.beginPath(); ctx.moveTo(-shieldWall.halfLen,0); ctx.lineTo(shieldWall.halfLen,0);
+    ctx.lineWidth=8; ctx.lineCap='round';
+    ctx.strokeStyle='#4ea1ff'; ctx.shadowColor='rgba(78,161,255,0.8)'; ctx.shadowBlur=12;
+    ctx.stroke(); ctx.restore();
   }
   function drawJoystick(){
     if (!joystick.active) return;
-    const v = joyVector();
-    ctx.save();
-    ctx.globalAlpha = 0.35;
+    const v=joyVector();
+    ctx.save(); ctx.globalAlpha=0.35;
     ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, JOY_MAX, 0, Math.PI*2);
-    ctx.fillStyle = '#30363d'; ctx.fill();
-    ctx.beginPath(); ctx.arc(joystick.baseX + v.dx*JOY_MAX*v.mag, joystick.baseY + v.dy*JOY_MAX*v.mag, 24, 0, Math.PI*2);
-    ctx.fillStyle = '#58a6ff'; ctx.globalAlpha = 0.55; ctx.fill();
+    ctx.fillStyle='#30363d'; ctx.fill();
+    ctx.beginPath(); ctx.arc(joystick.baseX+v.dx*JOY_MAX*v.mag, joystick.baseY+v.dy*JOY_MAX*v.mag, 24, 0, Math.PI*2);
+    ctx.fillStyle='#58a6ff'; ctx.globalAlpha=0.55; ctx.fill();
     ctx.restore();
   }
   function render(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawArena();
+    drawShield();
     for (const b of bullets) drawBullet(b);
     drawPlayer();
     drawJoystick();
   }
 
   function loop(ts){
-    if (!lastTs) lastTs = ts;
-    const dt = Math.min(0.04, (ts - lastTs)/1000);
-    lastTs = ts;
+    if (!lastTs) lastTs=ts;
+    const dt=Math.min(0.04,(ts-lastTs)/1000); lastTs=ts;
 
-    if (mode === 'playing'){
-      elapsed += dt;
+    if (mode==='solo' || mode==='battle'){
+      elapsed+=dt;
       timerBox.textContent = elapsed.toFixed(2);
-
-      const v = joyVector();
-      if (v.mag > 0.02){
-        const speed = MAX_SPEED * v.mag;
-        player.x += v.dx*speed*dt;
-        player.y += v.dy*speed*dt;
-        player.angle = Math.atan2(v.dy, v.dx) + Math.PI/2;
+      const v=joyVector();
+      if (v.mag>0.02){
+        const speed=MAX_SPEED*v.mag;
+        player.x+=v.dx*speed*dt; player.y+=v.dy*speed*dt;
+        player.faceX=v.dx; player.faceY=v.dy;
+        player.angle=Math.atan2(v.dy,v.dx)+Math.PI/2;
       }
-      const L = arena.x+player.r, R = arena.x+arena.size-player.r;
-      const T = arena.y+player.r, B = arena.y+arena.size-player.r;
-      player.x = Math.max(L, Math.min(R, player.x));
-      player.y = Math.max(T, Math.min(B, player.y));
+      const L=arena.x+player.r, R=arena.x+arena.size-player.r;
+      const T=arena.y+player.r, B=arena.y+arena.size-player.r;
+      player.x=Math.max(L,Math.min(R,player.x));
+      player.y=Math.max(T,Math.min(B,player.y));
 
-      spawnAcc += dt*1000;
-      if (spawnAcc > spawnIntervalAt(elapsed)){
-        spawnAcc = 0;
-        spawnWave(elapsed);
+      if (mode==='solo'){
+        soloSpawnAcc += dt*1000;
+        if (soloSpawnAcc > spawnIntervalAt(elapsed)){ soloSpawnAcc=0; spawnWave(elapsed); }
       }
       updateBullets(dt, performance.now());
     }
-
     render();
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
 
-  function startGame(){
-    if (!playerName){ showNameScreen(); return; }
+  // =========================================================
+  // SOLO mode
+  // =========================================================
+  let soloSpawnAcc=0, finalTime=0, scoreSaved=false;
+
+  function startSolo(){
     ensureAudio();
-    mode = 'playing';
-    bullets = [];
-    elapsed = 0;
-    spawnAcc = 0;
-    scoreSaved = false;
-    lastTs = 0;
-    player.x = arena.x + arena.size/2;
-    player.y = arena.y + arena.size/2;
-    player.angle = 0;
-    startScreen.classList.add('hidden');
-    gameOverScreen.classList.add('hidden');
-    rankingScreen.classList.add('hidden');
-    hud.classList.remove('hidden');
-    saveScoreBtn.disabled = false;
-    saveScoreBtn.textContent = '記録を登録する';
-    bestNote.textContent = '';
+    mode='solo'; bullets=[]; shieldWall=null; elapsed=0; soloSpawnAcc=0; scoreSaved=false; lastTs=0;
+    player.x=arena.x+arena.size/2; player.y=arena.y+arena.size/2; player.angle=0;
+    allOverlaysHide();
+    hud.classList.remove('hidden'); homeBtn.classList.remove('hidden');
+    vsLabel.classList.add('hidden'); battleButtons.classList.add('hidden');
+    saveScoreBtn.disabled=false; saveScoreBtn.textContent='記録を登録する'; bestNote.textContent='';
   }
   function triggerGameOver(){
-    mode = 'gameover';
-    finalTime = elapsed;
-    joystick.active = false;
-    hud.classList.add('hidden');
-    finalTimeEl.textContent = finalTime.toFixed(2) + '秒';
-    gameOverScreen.classList.remove('hidden');
+    mode='over_solo'; finalTime=elapsed; joystick.active=false; playBoom();
+    hud.classList.add('hidden'); homeBtn.classList.add('hidden');
+    finalTimeEl.textContent = finalTime.toFixed(2)+'秒';
+    allOverlaysHide(); gameOverScreen.classList.remove('hidden');
   }
+  document.getElementById('soloBtn').addEventListener('click', startSolo);
+  document.getElementById('retryBtn').addEventListener('click', startSolo);
+  document.getElementById('homeFromOverBtn').addEventListener('click', showHome);
 
-  document.getElementById('startBtn').addEventListener('click', startGame);
-  document.getElementById('retryBtn').addEventListener('click', startGame);
-  document.getElementById('showRankFromStart').addEventListener('click', ()=>openRanking());
-  document.getElementById('showRankFromOver').addEventListener('click', ()=>openRanking());
-  document.getElementById('closeRankBtn').addEventListener('click', ()=>{
-    rankingScreen.classList.add('hidden');
-  });
-
-  async function fetchScores(){
-    if (!fsDb) return [];
-    try {
-      const snap = await fsDb.collection('scores').orderBy('time','desc').limit(20).get();
-      const rows = [];
-      snap.forEach(doc=>rows.push(doc.data()));
-      return rows;
-    } catch(e){
-      console.error('fetchScores failed', e);
-      return [];
-    }
-  }
-
-  // one record per person: doc id = playerId, only overwritten if the new time is better
   async function saveScore(time){
     if (!fsDb || !playerName) return {ok:false};
     const ref = fsDb.collection('scores').doc(playerId);
     try {
       const doc = await ref.get();
-      const prevBest = doc.exists ? Number(doc.data().time || 0) : null;
-      if (prevBest !== null && time <= prevBest){
-        return {ok:true, updated:false, best:prevBest};
-      }
-      await ref.set({
-        name: playerName,
-        time: time,
-        ts: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      const prevBest = doc.exists ? Number(doc.data().time||0) : null;
+      if (prevBest!==null && time<=prevBest) return {ok:true, updated:false, best:prevBest};
+      await ref.set({name:playerName, time, ts:FV().serverTimestamp()});
       return {ok:true, updated:true, best:time};
-    } catch(e){
-      console.error('saveScore failed', e);
-      return {ok:false};
-    }
+    } catch(e){ console.error(e); return {ok:false}; }
   }
-
   saveScoreBtn.addEventListener('click', async ()=>{
     if (scoreSaved) return;
-    if (!playerName){ showNameScreen(); return; }
-    saveScoreBtn.disabled = true;
-    saveScoreBtn.textContent = '登録中…';
+    saveScoreBtn.disabled=true; saveScoreBtn.textContent='登録中…';
     const res = await saveScore(Number(finalTime.toFixed(2)));
-    scoreSaved = true;
-    if (!res.ok){
-      saveScoreBtn.textContent = '登録に失敗しました';
-      bestNote.textContent = '';
-    } else if (res.updated){
-      saveScoreBtn.textContent = '登録しました';
-      bestNote.textContent = '自己ベストを更新しました！';
-    } else {
-      saveScoreBtn.textContent = '登録済み（自己ベスト維持）';
-      bestNote.textContent = '自己ベスト ' + res.best.toFixed(2) + '秒 の方が上のため、記録は更新されませんでした。';
-    }
-    openRanking();
+    scoreSaved=true;
+    if (!res.ok){ saveScoreBtn.textContent='登録に失敗しました'; }
+    else if (res.updated){ saveScoreBtn.textContent='登録しました'; bestNote.textContent='自己ベストを更新しました！'; }
+    else { saveScoreBtn.textContent='登録済み（自己ベスト維持）'; bestNote.textContent='自己ベスト '+res.best.toFixed(2)+'秒 の方が上のため更新されませんでした。'; }
+    openRanking('time');
   });
 
-  async function openRanking(){
-    rankingScreen.classList.remove('hidden');
+  // =========================================================
+  // Ranking screen (tabs)
+  // =========================================================
+  let rankTab='time';
+  async function fetchTimeScores(){
+    if (!fsDb) return [];
+    try {
+      const snap = await fsDb.collection('scores').orderBy('time','desc').limit(20).get();
+      const rows=[]; snap.forEach(d=>rows.push(d.data())); return rows;
+    } catch(e){ return []; }
+  }
+  async function fetchRpScores(){
+    if (!fsDb) return [];
+    try {
+      const snap = await fsDb.collection('ranks').orderBy('rp','desc').limit(50).get();
+      const rows=[]; snap.forEach(d=>{ const v=d.data(); if (v.season===SEASON) rows.push(v); });
+      return rows.slice(0,20);
+    } catch(e){ return []; }
+  }
+  function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  async function openRanking(tab){
+    rankTab = tab || rankTab;
+    allOverlaysHide(); rankingScreen.classList.remove('hidden');
+    tabTime.classList.toggle('active', rankTab==='time');
+    tabRp.classList.toggle('active', rankTab==='rp');
+    seasonNoteRank.textContent = rankTab==='rp' ? ('今シーズン残り '+daysUntilReset()+' 日でリセット') : '';
     rankList.innerHTML = '<div class="rank-empty">読み込み中…</div>';
-    const rows = await fetchScores();
-    if (!rows || !rows.length){
-      rankList.innerHTML = '<div class="rank-empty">まだ記録がありません</div>';
+    if (rankTab==='time'){
+      const rows = await fetchTimeScores();
+      if (!rows.length){ rankList.innerHTML='<div class="rank-empty">まだ記録がありません</div>'; return; }
+      rows.sort((a,b)=>b.time-a.time);
+      rankList.innerHTML = rows.map((r,i)=>{
+        const nm=(r.name||'ノーネーム').toString().slice(0,10);
+        const tm=Number(r.time||0).toFixed(2);
+        return '<li><span class="pos">'+(i+1)+'</span><span class="nm">'+escapeHtml(nm)+'</span><span class="tm">'+tm+'秒</span></li>';
+      }).join('');
+    } else {
+      const rows = await fetchRpScores();
+      if (!rows.length){ rankList.innerHTML='<div class="rank-empty">まだ記録がありません</div>'; return; }
+      rows.sort((a,b)=>b.rp-a.rp);
+      rankList.innerHTML = rows.map((r,i)=>{
+        const nm=(r.name||'ノーネーム').toString().slice(0,10);
+        const info=getRankInfo(r.rp||0);
+        return '<li><span class="pos">'+(i+1)+'</span><span class="nm">'+escapeHtml(nm)+'</span><span class="tm">'+rankLabel(info)+' ('+(r.rp||0)+')</span></li>';
+      }).join('');
+    }
+  }
+  document.getElementById('showRankFromStart').addEventListener('click', ()=>openRanking('time'));
+  document.getElementById('showRankFromOver').addEventListener('click', ()=>openRanking('time'));
+  document.getElementById('closeRankBtn').addEventListener('click', ()=>{ allOverlaysHide(); showHome(); });
+  tabTime.addEventListener('click', ()=>openRanking('time'));
+  tabRp.addEventListener('click', ()=>openRanking('rp'));
+
+  // =========================================================
+  // BATTLE mode (PvP)
+  // =========================================================
+  let currentMatchId=null, currentMatchRef=null, isRanked=false, opponentId=null, opponentName='';
+  let unsubMatch=null, unsubShots=null, unsubQueue=null, unsubRoom=null;
+  let queueCollectionName=null, roomCode=null, rpAppliedForMatch=false;
+
+  function cleanupAll(){
+    if (queueRetryTimer){ clearInterval(queueRetryTimer); queueRetryTimer=null; }
+    if (unsubMatch){ unsubMatch(); unsubMatch=null; }
+    if (unsubShots){ unsubShots(); unsubShots=null; }
+    if (unsubQueue){ unsubQueue(); unsubQueue=null; }
+    if (unsubRoom){ unsubRoom(); unsubRoom=null; }
+    // best-effort cleanup of queue docs
+    if (fsDb && queueCollectionName){
+      fsDb.collection(queueCollectionName).doc(playerId).delete().catch(()=>{});
+    }
+    queueCollectionName=null; roomCode=null; currentMatchId=null; currentMatchRef=null;
+    opponentId=null; opponentName=''; rpAppliedForMatch=false;
+  }
+
+  function enterMatch(matchId, ranked){
+    currentMatchId = matchId; isRanked = ranked; rpAppliedForMatch=false;
+    currentMatchRef = fsDb.collection('matches').doc(matchId);
+    currentMatchRef.get().then(doc=>{
+      if (!doc.exists) return;
+      const d = doc.data();
+      opponentId = d.p1Id===playerId ? d.p2Id : d.p1Id;
+      opponentName = d.p1Id===playerId ? d.p2Name : d.p1Name;
+      startBattle();
+      listenMatch();
+      listenShots();
+    });
+  }
+
+  function listenMatch(){
+    if (unsubMatch) unsubMatch();
+    unsubMatch = currentMatchRef.onSnapshot(doc=>{
+      if (!doc.exists) return;
+      const d = doc.data();
+      if (d.status==='finished' && mode==='battle'){
+        finishBattle(d.loserId);
+      }
+    });
+  }
+  function listenShots(){
+    if (unsubShots) unsubShots();
+    unsubShots = currentMatchRef.collection('shots').where('by','==',opponentId).onSnapshot(snap=>{
+      snap.docChanges().forEach(ch=>{
+        if (ch.type==='added'){
+          const mult = speedMultiplier(elapsed*0.6);
+          spawnOneBullet(mult);
+        }
+      });
+    });
+  }
+
+  function startBattle(){
+    mode='battle'; bullets=[]; shieldWall=null; elapsed=0; lastTs=0; joystick.active=false;
+    player.x=arena.x+arena.size/2; player.y=arena.y+arena.size/2; player.angle=0;
+    player.faceX=0; player.faceY=-1;
+    allOverlaysHide();
+    hud.classList.remove('hidden'); homeBtn.classList.remove('hidden');
+    vsLabel.classList.remove('hidden'); battleButtons.classList.remove('hidden');
+    vsLabel.textContent = 'VS ' + opponentName + (isRanked ? '（ランクマッチ）' : '');
+  }
+
+  async function reportDeath(){
+    if (!currentMatchRef) return;
+    joystick.active=false; playBoom();
+    try {
+      await fsDb.runTransaction(async (tx)=>{
+        const doc = await tx.get(currentMatchRef);
+        if (!doc.exists) return;
+        const d = doc.data();
+        if (d.status==='finished') return;
+        tx.update(currentMatchRef, {status:'finished', loserId:playerId});
+      });
+    } catch(e){ console.error(e); }
+  }
+
+  async function finishBattle(loserId){
+    mode='over_battle';
+    hud.classList.add('hidden'); vsLabel.classList.add('hidden'); battleButtons.classList.add('hidden');
+    const won = loserId !== playerId;
+    battleResultTitle.textContent = won ? '勝利！' : '敗北…';
+    battleResultSub.textContent = won ? (opponentName+' に勝ちました。') : (opponentName+' に敗れました。');
+    rpChangeNote.textContent='';
+    if (isRanked && !rpAppliedForMatch){
+      rpAppliedForMatch = true;
+      // only the winner writes both deltas, to avoid double-application races
+      if (won){
+        const myNewRp = await applyRankDelta(25);
+        await applyOpponentDelta(opponentId, -20);
+        const info = getRankInfo(myNewRp);
+        rpChangeNote.textContent = 'RP +25 → '+myNewRp+' ('+rankLabel(info)+')';
+      } else {
+        rpChangeNote.textContent = '反映中…';
+        setTimeout(async ()=>{
+          const myRp = await getMyDisplayRp();
+          const info = getRankInfo(myRp);
+          rpChangeNote.textContent = 'RP -20 → '+myRp+' ('+rankLabel(info)+')';
+        }, 1500);
+      }
+    }
+    allOverlaysHide(); battleResultScreen.classList.remove('hidden');
+    if (unsubMatch){ unsubMatch(); unsubMatch=null; }
+    if (unsubShots){ unsubShots(); unsubShots=null; }
+  }
+  async function applyOpponentDelta(oppId, delta){
+    if (!fsDb) return;
+    const ref = fsDb.collection('ranks').doc(oppId);
+    try {
+      await fsDb.runTransaction(async (tx)=>{
+        const doc = await tx.get(ref);
+        let rp=0, name=opponentName;
+        if (doc.exists){
+          if (doc.data().season===SEASON) rp = doc.data().rp||0;
+          name = doc.data().name || name;
+        }
+        rp = Math.max(0, rp+delta);
+        tx.set(ref, {name, rp, season:SEASON});
+      });
+    } catch(e){ console.error(e); }
+  }
+
+  wallBtn.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); if (mode==='battle') placeShield(); }, {passive:false});
+  wallBtn.addEventListener('click', ()=>{ if (mode==='battle') placeShield(); });
+  shootBtn.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); if (mode==='battle') fireShot(); }, {passive:false});
+  shootBtn.addEventListener('click', ()=>{ if (mode==='battle') fireShot(); });
+  function fireShot(){
+    if (!currentMatchRef) return;
+    playShoot();
+    currentMatchRef.collection('shots').add({by:playerId, ts:FV().serverTimestamp()}).catch(e=>console.error(e));
+  }
+
+  document.getElementById('rematchBtn').addEventListener('click', ()=>{
+    const ranked = isRanked;
+    cleanupAll();
+    startQueue(ranked ? 'queue_ranked' : 'queue_casual', ranked);
+  });
+  document.getElementById('homeFromBattleBtn').addEventListener('click', showHome);
+
+  // ---------- Random matchmaking ----------
+  let queueRetryTimer = null;
+  function startQueue(collName, ranked){
+    if (!fsDb || !playerName){ showHome(); return; }
+    ensureAudio();
+    cleanupAllExceptMode();
+    mode='queueing';
+    queueCollectionName = collName;
+    allOverlaysHide(); queueScreen.classList.remove('hidden');
+    homeBtn.classList.remove('hidden'); hud.classList.add('hidden');
+    queueTitle.textContent = ranked ? 'ランク対戦相手を探しています…' : '対戦相手を探しています…';
+    queueSub.textContent = 'しばらくお待ちください';
+
+    const myRef = fsDb.collection(collName).doc(playerId);
+    myRef.set({name:playerName, ts:FV().serverTimestamp(), matchId:null}).then(()=>{
+      if (unsubQueue) unsubQueue();
+      unsubQueue = myRef.onSnapshot(doc=>{
+        if (!doc.exists) return;
+        const d = doc.data();
+        if (d.matchId && mode==='queueing'){
+          if (unsubQueue){ unsubQueue(); unsubQueue=null; }
+          if (queueRetryTimer){ clearInterval(queueRetryTimer); queueRetryTimer=null; }
+          myRef.delete().catch(()=>{});
+          enterMatch(d.matchId, ranked);
+        }
+      });
+      tryFindOpponent(collName, ranked);
+      if (queueRetryTimer) clearInterval(queueRetryTimer);
+      queueRetryTimer = setInterval(()=>{
+        if (mode!=='queueing' || queueCollectionName!==collName){ clearInterval(queueRetryTimer); queueRetryTimer=null; return; }
+        tryFindOpponent(collName, ranked);
+      }, 3000);
+    });
+  }
+  async function tryFindOpponent(collName, ranked){
+    try {
+      const snap = await fsDb.collection(collName).orderBy('ts','asc').limit(8).get();
+      const candidates = [];
+      snap.forEach(d=>{ if (d.id!==playerId && d.data().matchId==null) candidates.push(d); });
+      if (!candidates.length) return; // stay waiting, will be matched by someone else
+      const target = candidates[0];
+      const targetRef = fsDb.collection(collName).doc(target.id);
+      const myRef = fsDb.collection(collName).doc(playerId);
+      const matchRef = fsDb.collection('matches').doc();
+      await fsDb.runTransaction(async (tx)=>{
+        const tDoc = await tx.get(targetRef);
+        if (!tDoc.exists || tDoc.data().matchId) throw new Error('taken');
+        tx.set(matchRef, {
+          p1Id: playerId, p1Name: playerName,
+          p2Id: target.id, p2Name: tDoc.data().name || 'ノーネーム',
+          ranked: ranked, status:'active', loserId:null, startedAt: FV().serverTimestamp()
+        });
+        tx.update(targetRef, {matchId: matchRef.id});
+        tx.delete(myRef);
+      });
+      if (unsubQueue){ unsubQueue(); unsubQueue=null; }
+      enterMatch(matchRef.id, ranked);
+    } catch(e){
+      // race lost or no candidate available yet; keep waiting
+    }
+  }
+  document.getElementById('casualBtn').addEventListener('click', ()=>startQueue('queue_casual', false));
+  document.getElementById('rankedBtn').addEventListener('click', ()=>startQueue('queue_ranked', true));
+
+  function cleanupAllExceptMode(){
+    if (unsubMatch){ unsubMatch(); unsubMatch=null; }
+    if (unsubShots){ unsubShots(); unsubShots=null; }
+    if (unsubQueue){ unsubQueue(); unsubQueue=null; }
+    if (unsubRoom){ unsubRoom(); unsubRoom=null; }
+    currentMatchId=null; currentMatchRef=null; opponentId=null; opponentName='';
+  }
+
+  // ---------- Passphrase matchmaking ----------
+  document.getElementById('passBtn').addEventListener('click', ()=>{
+    if (!playerName){ showHome(); return; }
+    passInput.value=''; passNote.textContent='';
+    allOverlaysHide(); passphraseScreen.classList.remove('hidden');
+    homeBtn.classList.remove('hidden');
+  });
+  document.getElementById('passBackBtn').addEventListener('click', showHome);
+
+  document.getElementById('createRoomBtn').addEventListener('click', async ()=>{
+    const code = passInput.value.trim().toUpperCase().slice(0,12);
+    if (!code){ passNote.textContent='合言葉を入力してください。'; return; }
+    if (!fsDb){ passNote.textContent='Firebaseに接続できません。'; return; }
+    ensureAudio();
+    const roomRef = fsDb.collection('rooms').doc(code);
+    try {
+      await fsDb.runTransaction(async (tx)=>{
+        const doc = await tx.get(roomRef);
+        if (doc.exists && doc.data().guestId==null) throw new Error('exists-waiting');
+        if (doc.exists && doc.data().matchId) throw new Error('exists-active');
+        tx.set(roomRef, {hostId:playerId, hostName:playerName, guestId:null, guestName:null, matchId:null, createdAt:FV().serverTimestamp()});
+      });
+    } catch(e){
+      passNote.textContent='その合言葉はすでに使用中です。別の合言葉をお試しください。';
       return;
     }
-    rows.sort((a,b)=>b.time-a.time);
-    rankList.innerHTML = rows.slice(0,20).map((r,i)=>{
-      const nm = (r.name||'ノーネーム').toString().slice(0,10);
-      const tm = Number(r.time||0).toFixed(2);
-      return `<li><span class="pos">${i+1}</span><span class="nm">${escapeHtml(nm)}</span><span class="tm">${tm}秒</span></li>`;
-    }).join('');
-  }
-  function escapeHtml(s){
-    return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+    roomCode = code;
+    allOverlaysHide(); queueScreen.classList.remove('hidden');
+    queueTitle.textContent='相手の参加を待っています…';
+    queueSub.textContent='合言葉: ' + code;
+    if (unsubRoom) unsubRoom();
+    unsubRoom = roomRef.onSnapshot(doc=>{
+      if (!doc.exists) return;
+      const d = doc.data();
+      if (d.matchId && mode==='queueing'){
+        if (unsubRoom){ unsubRoom(); unsubRoom=null; }
+        enterMatch(d.matchId, false);
+      }
+    });
+    mode='queueing';
+  });
+
+  document.getElementById('joinRoomBtn').addEventListener('click', async ()=>{
+    const code = passInput.value.trim().toUpperCase().slice(0,12);
+    if (!code){ passNote.textContent='合言葉を入力してください。'; return; }
+    if (!fsDb){ passNote.textContent='Firebaseに接続できません。'; return; }
+    ensureAudio();
+    const roomRef = fsDb.collection('rooms').doc(code);
+    const matchRef = fsDb.collection('matches').doc();
+    try {
+      await fsDb.runTransaction(async (tx)=>{
+        const doc = await tx.get(roomRef);
+        if (!doc.exists) throw new Error('not-found');
+        const d = doc.data();
+        if (d.guestId) throw new Error('full');
+        tx.set(matchRef, {
+          p1Id:d.hostId, p1Name:d.hostName, p2Id:playerId, p2Name:playerName,
+          ranked:false, status:'active', loserId:null, startedAt:FV().serverTimestamp()
+        });
+        tx.update(roomRef, {guestId:playerId, guestName:playerName, matchId:matchRef.id});
+      });
+    } catch(e){
+      passNote.textContent = e.message==='not-found' ? 'その合言葉の部屋が見つかりません。' : '満員か、既に対戦中です。';
+      return;
+    }
+    enterMatch(matchRef.id, false);
+  });
+
+  document.getElementById('cancelQueueBtn').addEventListener('click', async ()=>{
+    if (roomCode && fsDb){ await fsDb.collection('rooms').doc(roomCode).delete().catch(()=>{}); }
+    cleanupAll(); showHome();
+  });
+
+  // =========================================================
+  // Boot
+  // =========================================================
+  if (playerName) showHome();
 })();
 </script>
 </body>
