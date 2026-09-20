@@ -165,6 +165,13 @@
 
 <canvas id="game"></canvas>
 
+<div id="bootScreen" class="overlay">
+  <div class="card">
+    <div class="spinner"></div>
+    <div class="sub" id="bootNote">接続しています…</div>
+  </div>
+</div>
+
 <div id="homeBtn" class="hidden">🏠</div>
 <div id="hud" class="hidden"><div id="timerBox">0.00</div></div>
 <div id="vsLabel" class="hidden"></div>
@@ -229,7 +236,6 @@
     <div class="sub">生存時間</div>
     <div class="result-time" id="finalTime">0.00秒</div>
     <div class="best-note" id="bestNote"></div>
-    <button class="btn btn-primary" id="saveScoreBtn">記録を登録する</button>
     <button class="btn btn-secondary" id="retryBtn">もう一度プレイ</button>
     <button class="btn btn-secondary" id="showRankFromOver">ランキングを見る</button>
     <button class="btn btn-secondary" id="homeFromOverBtn">ホームに戻る</button>
@@ -260,6 +266,7 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script>
 (function(){
@@ -301,8 +308,11 @@
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return 'p-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
-  let playerId = getCookie('bd_player_id');
-  if (!playerId){ playerId = genId(); setCookie('bd_player_id', playerId, 3650); }
+  // playerId is the Firebase Anonymous Auth UID (set once sign-in resolves below).
+  // This is what Firestore security rules check ownership against, so it can't be
+  // spoofed by editing a cookie. The nickname itself still lives in a cookie.
+  let playerId = null;
+  let authReady = false;
   let playerName = getCookie('bd_player_name') || '';
 
   // =========================================================
@@ -402,7 +412,6 @@
 
   const finalTimeEl = document.getElementById('finalTime');
   const bestNote = document.getElementById('bestNote');
-  const saveScoreBtn = document.getElementById('saveScoreBtn');
 
   const battleResultTitle = document.getElementById('battleResultTitle');
   const battleResultSub = document.getElementById('battleResultSub');
@@ -412,11 +421,11 @@
   const seasonNoteRank = document.getElementById('seasonNoteRank');
   const tabTime = document.getElementById('tabTime');
   const tabRp = document.getElementById('tabRp');
-
-  if (!fsDb){ dbNote.textContent = '※Firebaseに接続できないため、オンライン機能は利用できません。'; }
+  const bootScreen = document.getElementById('bootScreen');
+  const bootNote = document.getElementById('bootNote');
 
   function allOverlaysHide(){
-    [nameScreen,startScreen,passphraseScreen,queueScreen,gameOverScreen,battleResultScreen,rankingScreen]
+    [bootScreen,nameScreen,startScreen,passphraseScreen,queueScreen,gameOverScreen,battleResultScreen,rankingScreen]
       .forEach(el=>el.classList.add('hidden'));
   }
 
@@ -446,7 +455,6 @@
     rankBadgeHome.querySelector('.diamond').style.background = info.color;
     rankBadgeText.innerHTML = rankLabel(info) + '<span class="rank-rp"> ・ ' + rp + 'RP</span>';
   }
-  if (!playerName){ showNameScreen(); }
 
   document.getElementById('confirmNameBtn').addEventListener('click', ()=>{
     const v = nameInput2.value.trim();
@@ -750,13 +758,14 @@
     allOverlaysHide();
     hud.classList.remove('hidden'); homeBtn.classList.remove('hidden');
     vsLabel.classList.add('hidden'); battleButtons.classList.add('hidden');
-    saveScoreBtn.disabled=false; saveScoreBtn.textContent='記録を登録する'; bestNote.textContent='';
+    bestNote.textContent='';
   }
   function triggerGameOver(){
     mode='over_solo'; finalTime=elapsed; joystick.active=false; playBoom();
     hud.classList.add('hidden'); homeBtn.classList.add('hidden');
     finalTimeEl.textContent = finalTime.toFixed(2)+'秒';
     allOverlaysHide(); gameOverScreen.classList.remove('hidden');
+    autoSaveScore();
   }
   document.getElementById('soloBtn').addEventListener('click', startSolo);
   document.getElementById('retryBtn').addEventListener('click', startSolo);
@@ -773,16 +782,16 @@
       return {ok:true, updated:true, best:time};
     } catch(e){ console.error(e); return {ok:false}; }
   }
-  saveScoreBtn.addEventListener('click', async ()=>{
+  async function autoSaveScore(){
     if (scoreSaved) return;
-    saveScoreBtn.disabled=true; saveScoreBtn.textContent='登録中…';
+    scoreSaved = true;
+    if (!fsDb){ bestNote.textContent=''; return; }
+    bestNote.textContent = '記録を確認しています…';
     const res = await saveScore(Number(finalTime.toFixed(2)));
-    scoreSaved=true;
-    if (!res.ok){ saveScoreBtn.textContent='登録に失敗しました'; }
-    else if (res.updated){ saveScoreBtn.textContent='登録しました'; bestNote.textContent='自己ベストを更新しました！'; }
-    else { saveScoreBtn.textContent='登録済み（自己ベスト維持）'; bestNote.textContent='自己ベスト '+res.best.toFixed(2)+'秒 の方が上のため更新されませんでした。'; }
-    openRanking('time');
-  });
+    if (!res.ok){ bestNote.textContent='記録の保存に失敗しました。'; }
+    else if (res.updated){ bestNote.textContent='ランキングに自己ベストとして自動登録しました！'; }
+    else { bestNote.textContent='自己ベスト '+res.best.toFixed(2)+'秒 の方が上のため、ランキングは更新されませんでした。'; }
+  }
 
   // =========================================================
   // Ranking screen (tabs)
@@ -1127,9 +1136,36 @@
   });
 
   // =========================================================
-  // Boot
+  // Boot: anonymous auth first, so Firestore rules can check
+  // request.auth.uid instead of trusting a client-supplied id.
   // =========================================================
-  if (playerName) showHome();
+  function goOffline(){
+    // Firebase unreachable/blocked: generate a local-only id so solo play
+    // still works, but online features (saving/ranking/PvP) are disabled.
+    playerId = getCookie('bd_offline_id') || genId();
+    setCookie('bd_offline_id', playerId, 3650);
+    authReady = false;
+    dbNote.textContent = '※オンライン機能（保存・ランキング・対戦）には接続できていません。ソロプレイのみ利用できます。';
+    fsDb = null;
+    bootScreen.classList.add('hidden');
+    if (!playerName) showNameScreen(); else showHome();
+  }
+  if (!fsDb || !firebase.auth){
+    goOffline();
+  } else {
+    firebase.auth().onAuthStateChanged(user=>{
+      if (user){
+        playerId = user.uid;
+        authReady = true;
+        bootScreen.classList.add('hidden');
+        if (!playerName) showNameScreen(); else showHome();
+      }
+    });
+    firebase.auth().signInAnonymously().catch(e=>{
+      console.error('anonymous sign-in failed', e);
+      goOffline();
+    });
+  }
 })();
 </script>
 </body>
